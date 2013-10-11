@@ -18,8 +18,7 @@ public interface ISoftwareHouse {
 	 * @param developerID
 	 * @param connection
 	 */
-	void generateLicenses(int numLicenses, String developerID,
-			 Socket connection);
+	void generateLicenses(Socket connection);
 	
 	/**
 	 * 

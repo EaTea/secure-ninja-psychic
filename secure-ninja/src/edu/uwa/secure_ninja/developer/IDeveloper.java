@@ -20,7 +20,8 @@ public interface IDeveloper {
 	 * @param softwareHouseIP
 	 * @return
 	 */
-	int requestLicenses(int numLicenses, InetAddress softwareHouseIP);
+	void requestLicenses(int numLicenses, String libraryName,
+	InetAddress softwareHouseIP, int portNumber);
 
 	/**
 	 * 
