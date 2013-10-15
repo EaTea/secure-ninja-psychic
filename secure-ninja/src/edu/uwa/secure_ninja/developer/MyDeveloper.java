@@ -22,46 +22,59 @@ import edu.uwa.secure_ninja.swh.MySoftwareHouse;
  *
  */
 public class MyDeveloper implements IDeveloper {
-	public static void main(String[] args) {
-		MyDeveloper mdev = new MyDeveloper();
-		try {
-			InetAddress addr = InetAddress.getByName("130.95.133.136");
-			mdev.requestLicenses(10, "AAA", addr, 1234);
-		} catch (UnknownHostException e) {
-			e.printStackTrace();
-		}
-		
-	}
+    /**
+     * 
+     */
+    private HashMap<License, Integer> licenses =
+            new HashMap<License, Integer>();
+   /**
+    * 
+    * @param args
+    */
+    public static void main(String[] args) {
+        MyDeveloper mdev = new MyDeveloper();
+        try {
+            InetAddress addr = InetAddress.getByName("130.95.133.136");
+            mdev.requestLicenses(10, "AAA", addr, 1234);
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
+        
+    }
 
-	/** 
-	 * 
-	 */
-	public void requestLicenses(int numLicenses, String libraryName,
-				InetAddress softwareHouseIP, int portNumber) {
-		try {
-			Socket client = new Socket(softwareHouseIP, portNumber);
-			DataInputStream in = new DataInputStream(client.getInputStream());
-			DataOutputStream out = new DataOutputStream(
-					client.getOutputStream());
-			out.writeUTF(libraryName);
-			out.writeInt(numLicenses);
-			String license = in.readUTF();
-			System.out.println("Dev: " + license);
-			in.close();
-			out.close();
-			client.close();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
+    /**
+     * 
+     */
+    public void requestLicenses(int numLicenses, String libraryName,
+                InetAddress softwareHouseIP, int portNumber) {
+        try {
+            Socket client = new Socket(softwareHouseIP, portNumber);
+            DataInputStream in = new DataInputStream(client.getInputStream());
+            DataOutputStream out = new DataOutputStream(
+                    client.getOutputStream());
+            out.writeUTF(libraryName);
+            out.writeInt(numLicenses);
+            String license = in.readUTF();
+            int number = in.readInt();
+            License temp = new License(license, softwareHouseIP, libraryName,
+                    client.getInetAddress());
+            licenses.put(temp, number);
+            //System.out.println("Dev: " + license);
+            in.close();
+            out.close();
+            client.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
-	/** 
-	 * 
-	 */
-	public boolean linkFiles(InetAddress linkBrokerIP, List<File> classFiles,
-			List<License> licenses, String JARName) {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    /** 
+     * 
+     */
+    public boolean linkFiles(InetAddress linkBrokerIP, List<File> classFiles,
+            List<License> licenses, String JARName) {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
 }
