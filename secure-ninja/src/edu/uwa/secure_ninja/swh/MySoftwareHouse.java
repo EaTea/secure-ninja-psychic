@@ -20,7 +20,8 @@ public class MySoftwareHouse implements ISoftwareHouse {
     /**
      *
      */
-    private HashMap<License, Integer> clients;
+    private HashMap<String, License> clientLicenses =
+            new HashMap<String, License>();
     /**
      * 
      */
@@ -33,7 +34,7 @@ public class MySoftwareHouse implements ISoftwareHouse {
     public static void main(String[] args) {
         MySoftwareHouse mswh = new MySoftwareHouse();
         try {
-            mswh.server = new ServerSocket(1234);
+            mswh.server = new ServerSocket(1777);
             mswh.generateLicenses(mswh.server.accept());
             mswh.server.close();
         } catch (IOException e) {
@@ -62,8 +63,8 @@ public class MySoftwareHouse implements ISoftwareHouse {
             out.writeInt(numLicenses);
 //            System.out.println(licence);
             License temp = new License(licence, server.getInetAddress(),
-                    library, connection.getInetAddress());
-            clients.put(temp, numLicenses);
+               library, connection.getInetAddress().getHostName(), numLicenses);
+            clientLicenses.put(connection.getInetAddress().getHostName(), temp);
             in.close();
             out.close();
             connection.close();
@@ -73,7 +74,7 @@ public class MySoftwareHouse implements ISoftwareHouse {
         }
     }
 
-    /** 
+    /**
      */
     public boolean verifyLicense(String license, String library,
             String developerID) {
@@ -85,7 +86,9 @@ public class MySoftwareHouse implements ISoftwareHouse {
      */
     public void acceptLicenses(Socket connection) {
         // TODO Auto-generated method stub
-
+        String license;
+        String library;
+        String developerID;
     }
 
     /** 

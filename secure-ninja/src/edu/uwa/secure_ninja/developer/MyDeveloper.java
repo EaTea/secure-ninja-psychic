@@ -16,36 +16,38 @@ import java.net.UnknownHostException;
 import java.util.List;
 import java.util.HashMap;
 
-import edu.uwa.secure_ninja.swh.MySoftwareHouse;
 /**
  * @author Edwin Tay() & Wan Ying Goh(20784663)
  *
  */
 public class MyDeveloper implements IDeveloper {
     /**
-     * 
+     *
      */
-    private HashMap<License, Integer> licenses =
-            new HashMap<License, Integer>();
+    private HashMap<String, License> licenses =
+            new HashMap<String, License>();
    /**
-    * 
+    *
     * @param args
     */
     public static void main(String[] args) {
         MyDeveloper mdev = new MyDeveloper();
         try {
-            InetAddress addr = InetAddress.getByName("130.95.133.136");
-            mdev.requestLicenses(10, "AAA", addr, 1234);
+            InetAddress addr = InetAddress.getByName("180.216.16.55");
+            mdev.requestLicenses(10, "AAA", addr, 1777);
         } catch (UnknownHostException e) {
             e.printStackTrace();
         }
-        
     }
 
     /**
-     * 
+     *
+     * @param numLicenses
+     * @param libraryName
+     * @param softwareHouseIP
+     * @param portNumber
      */
-    public void requestLicenses(int numLicenses, String libraryName,
+    public final void requestLicenses(int numLicenses, String libraryName,
                 InetAddress softwareHouseIP, int portNumber) {
         try {
             Socket client = new Socket(softwareHouseIP, portNumber);
@@ -57,8 +59,10 @@ public class MyDeveloper implements IDeveloper {
             String license = in.readUTF();
             int number = in.readInt();
             License temp = new License(license, softwareHouseIP, libraryName,
-                    client.getInetAddress());
-            licenses.put(temp, number);
+                    client.getInetAddress().getHostName(), number);
+            System.out.println(client.getInetAddress());
+            System.out.println(softwareHouseIP);
+            licenses.put(license, temp);
             //System.out.println("Dev: " + license);
             in.close();
             out.close();
@@ -68,12 +72,19 @@ public class MyDeveloper implements IDeveloper {
         }
     }
 
-    /** 
-     * 
+    /**
+     *
      */
     public boolean linkFiles(InetAddress linkBrokerIP, List<File> classFiles,
-            List<License> licenses, String JARName) {
+            List<License> licenses, String JARName, int portNumber) {
         // TODO Auto-generated method stub
+        try {
+            Socket client = new Socket(linkBrokerIP, portNumber);
+            InputStream in = client.getInputStream();
+            OutputStream out = client.getOutputStream();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         return false;
     }
 

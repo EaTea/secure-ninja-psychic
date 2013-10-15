@@ -17,7 +17,7 @@ public class License {
     /**
      * 
      */
-    private InetAddress developerIP;
+    private String developerID;
     /**
      * 
      */
@@ -26,7 +26,10 @@ public class License {
      * 
      */
     private String libraryName;
-
+    /**
+     * 
+     */
+    private int numberLicenses;
     /**
      * 
      * @param license
@@ -35,11 +38,12 @@ public class License {
      * @param developerIP
      */
     public License(String license, InetAddress swhIP, String name,
-            InetAddress developerIP) {
+            String developerID, int licenses) {
         this.licenseString = license;
         this.softwareHouseIP = swhIP;
         this.libraryName = name;
-        this.developerIP = developerIP;
+        this.setDeveloperID(developerID);
+        this.numberLicenses = licenses;
     }
     /**
      * 
@@ -77,22 +81,6 @@ public class License {
      * 
      * @return
      */
-    protected InetAddress getDeveloperIP() {
-        return developerIP;
-    }
-    
-    /**
-     * 
-     * @param softwareHouseIP
-     */
-    private void setDeveloperIP(InetAddress developerIP) {
-        this.developerIP = developerIP;
-    }
-    
-    /**
-     * 
-     * @return
-     */
     protected String getLibraryName() {
         return libraryName;
     }
@@ -103,6 +91,18 @@ public class License {
      */
     private void setLibraryName(String libraryName) {
         this.libraryName = libraryName;
+    }
+    public String getDeveloperID() {
+        return developerID;
+    }
+    public void setDeveloperID(String developerID) {
+        this.developerID = developerID;
+    }
+    public int getNumberLicenses() {
+        return numberLicenses;
+    }
+    public void setNumberLicenses(int numberLicenses) {
+        this.numberLicenses = numberLicenses;
     }
 
 }
