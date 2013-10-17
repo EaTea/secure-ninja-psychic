@@ -5,6 +5,9 @@ package edu.uwa.secure_ninja.swh;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -16,12 +19,16 @@ import edu.uwa.secure_ninja.developer.License;
  * @author wying1211
  *
  */
-public class MySoftwareHouse implements ISoftwareHouse {
+public class MySoftwareHouse {
     /**
      *
      */
     private HashMap<String, License> clientLicenses =
             new HashMap<String, License>();
+    /**
+     * 
+     */
+    private HashMap<String, File> libraries = new HashMap<String, File>();
     /**
      * 
      */
@@ -53,18 +60,23 @@ public class MySoftwareHouse implements ISoftwareHouse {
             DataOutputStream out = new DataOutputStream(
                     connection.getOutputStream());
             String library = in.readUTF();
-            int numLicenses = in.readInt();
-            String developerID =
-                    connection.getInetAddress().getHostName();
-            long time = System.currentTimeMillis();
-            String licence = library + numLicenses + developerID
-                    + time;
-            out.writeUTF(licence);
-            out.writeInt(numLicenses);
-//            System.out.println(licence);
-            License temp = new License(licence, server.getInetAddress(),
-               library, connection.getInetAddress().getHostName(), numLicenses);
-            clientLicenses.put(connection.getInetAddress().getHostName(), temp);
+            if(libraries.containsKey(library)) {
+                int numLicenses = in.readInt();
+                String developerID =
+                        connection.getInetAddress().getHostName();
+                long time = System.currentTimeMillis();
+                String licence = library + numLicenses + developerID
+                        + time;
+                out.writeInt(licence.length());
+                out.writeUTF(licence);
+ //               out.writeInt(numLicenses);
+    //            System.out.println(licence);
+                License temp = new License(licence, server.getInetAddress(),
+                   library, connection.getInetAddress().getHostName(), numLicenses);
+                clientLicenses.put(licence, temp);
+            } else {
+                out.writeInt(0); //0 means no license
+            }
             in.close();
             out.close();
             connection.close();
@@ -76,9 +88,16 @@ public class MySoftwareHouse implements ISoftwareHouse {
 
     /**
      */
-    public boolean verifyLicense(String license, String library,
-            String developerID) {
-        // TODO Auto-generated method stub
+    public boolean verifyLicense(String license) {
+        License temp = clientLicenses.get(license);
+        if (temp != null) {
+            if (temp.getNumberLicenses() > 0) {
+                temp.setNumberLicenses(temp.getNumberLicenses()-1);
+                return true;
+            } else {
+                clientLicenses.remove(temp);
+            }
+        }
         return false;
     }
 
@@ -86,16 +105,50 @@ public class MySoftwareHouse implements ISoftwareHouse {
      */
     public void acceptLicenses(Socket connection) {
         // TODO Auto-generated method stub
-        String license;
-        String library;
-        String developerID;
+        try {
+            DataInputStream in = new DataInputStream(connection.getInputStream());
+            String license = in.readUTF();
+            //accept it and send files;
+            if (verifyLicense(license)) {
+                License temp = clientLicenses.get(license);
+                String libraryName = temp.getLibraryName();
+                sendLibraryFile(connection, libraryName);
+            }
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
     }
 
-    /** 
+    /**
+     * 
+     * @param connection
+     * @param libraryName
      */
     public void sendLibraryFile(Socket connection, String libraryName) {
-        // TODO Auto-generated method stub
-
+        try {
+            DataOutputStream out =
+                    new DataOutputStream(connection.getOutputStream());
+            File file = libraries.get(libraryName);
+            FileInputStream fileIn =
+                    new FileInputStream(file);
+            out.writeLong(file.length());
+            int a;
+            while ((a = fileIn.read()) != -1) {
+                out.write(a);
+            }
+            fileIn.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
-
+    
+    /**
+     * 
+     * @param libraryName
+     * @param fileName
+     */
+    public void addLibraryFile(String libraryName, String fileName) {
+        libraries.put(libraryName, new File(fileName));
+    }
 }
