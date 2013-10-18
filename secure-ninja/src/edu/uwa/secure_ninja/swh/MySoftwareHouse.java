@@ -7,7 +7,6 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -92,7 +91,6 @@ public class MySoftwareHouse {
         License temp = clientLicenses.get(license);
         if (temp != null) {
             if (temp.getNumberLicenses() > 0) {
-                temp.setNumberLicenses(temp.getNumberLicenses()-1);
                 return true;
             } else {
                 clientLicenses.remove(temp);
@@ -113,6 +111,13 @@ public class MySoftwareHouse {
                 License temp = clientLicenses.get(license);
                 String libraryName = temp.getLibraryName();
                 sendLibraryFile(connection, libraryName);
+                if (in.readBoolean()) { //everything got linked up
+                    temp.decrementNumberLicenses();
+                }
+            } else {
+                //send -1 if declined
+                DataOutputStream out = new DataOutputStream(connection.getOutputStream());
+                out.writeLong(-1);
             }
         } catch (IOException e) {
             // TODO Auto-generated catch block
@@ -132,6 +137,9 @@ public class MySoftwareHouse {
             File file = libraries.get(libraryName);
             FileInputStream fileIn =
                     new FileInputStream(file);
+            String path = file.getPath();
+            out.writeInt(path.length());
+            out.writeUTF(path);
             out.writeLong(file.length());
             int a;
             while ((a = fileIn.read()) != -1) {
