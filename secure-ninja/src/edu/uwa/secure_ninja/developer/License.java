@@ -49,7 +49,7 @@ public class License {
      * 
      * @return
      */
-    protected String getLicenseString() {
+    public String getLicenseString() {
         return licenseString;
     }
     
@@ -65,7 +65,7 @@ public class License {
      * 
      * @return
      */
-    protected InetAddress getSoftwareHouseIP() {
+    public InetAddress getSoftwareHouseIP() {
         return softwareHouseIP;
     }
     
@@ -81,7 +81,7 @@ public class License {
      * 
      * @return
      */
-    protected String getLibraryName() {
+    public String getLibraryName() {
         return libraryName;
     }
     
@@ -92,17 +92,24 @@ public class License {
     private void setLibraryName(String libraryName) {
         this.libraryName = libraryName;
     }
+
     public String getDeveloperID() {
         return developerID;
     }
-    public void setDeveloperID(String developerID) {
+
+    private void setDeveloperID(String developerID) {
         this.developerID = developerID;
     }
+
     public int getNumberLicenses() {
         return numberLicenses;
     }
-    public void setNumberLicenses(int numberLicenses) {
-        this.numberLicenses = numberLicenses;
+    
+    public void setNumberLicenses(int numLicense) {
+        this.numberLicenses = numLicense;
     }
-
+    
+    public void decrementNumberLicenses() {
+        numberLicenses--;
+    }
 }

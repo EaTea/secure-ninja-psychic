@@ -14,11 +14,10 @@ import java.util.List;
  */
 public interface IDeveloper {
 
-	/**
-	 * 
+    /**
+	 *
 	 * @param numLicenses
 	 * @param softwareHouseIP
-	 * @return
 	 */
 	void requestLicenses(int numLicenses, String libraryName,
 	InetAddress softwareHouseIP, int portNumber);
@@ -32,5 +31,5 @@ public interface IDeveloper {
 	 * @return
 	 */
 	boolean linkFiles(InetAddress linkBrokerIP, List<File> classFiles,
-			List<License> licenses, String JARName);
+			List<String> licenses, String JARName, int portNumber);
 }
