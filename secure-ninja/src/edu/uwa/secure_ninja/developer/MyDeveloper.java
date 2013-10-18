@@ -48,7 +48,7 @@ public class MyDeveloper implements IDeveloper {
             int nFiles = 1;//sc.nextInt();
             System.out.println("Filenames?");
             for (int i = 0; i < nFiles; i++) {
-                String fileName = "./bin/edu/uwa/secure_ninja/developer/MyDeveloper.class";
+                String fileName = "./edu/uwa/secure_ninja/developer/MyDeveloper.class";
 //sc.next();
                 File f = new File(fileName);
                 files.add(f);
@@ -164,7 +164,7 @@ public class MyDeveloper implements IDeveloper {
                 out.writeInt(classFiles.size());
                 for (File file: classFiles) {
                     FileInputStream fileIn = new FileInputStream(file);
-                    String path = file.getPath();
+                    String path = file.getAbsolutePath();
                     out.writeInt(path.length());
                     out.writeUTF(path);
                     out.writeLong(file.length());
@@ -177,9 +177,8 @@ public class MyDeveloper implements IDeveloper {
                 //read in bytes from Linkbroker
                 FileOutputStream stream =
                         new FileOutputStream(JARName + ".jar");
-                JarOutputStream jarOut =
-                        new JarOutputStream(stream, new Manifest());
                 long size = in.readLong();
+                System.err.println(size);
                 int a;
                 for (long s = 0; s < size; s++) {
                     a = in.read();
@@ -187,9 +186,9 @@ public class MyDeveloper implements IDeveloper {
                         System.err.println(
                                 "Error while receiving from linkbroker"); break;
                     }
-                    jarOut.write(a);
+                    stream.write(a);
                 }
-                jarOut.close();
+                stream.close();
             } else {
                 System.out.println("Linking failed");
                 linkSuccess = false;

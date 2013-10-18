@@ -111,15 +111,17 @@ public class MyLinkBroker {
                             jarOut.write(a);
                         }
                     }
-                    out.writeBoolean(success);
+                    //out.writeBoolean(success);
                     if(!success) {
                         return; //linking fail
                     }
 //          TODO      jarOut.closeEntry();
                 }
+                jarOut.close();
                 File jar = new File(JARName+".jar");
                 FileInputStream jarIn = new FileInputStream(jar);
                 out.writeLong(jar.length());
+                System.err.println(jar.length());
                 int a;
                 while ((a = jarIn.read()) != -1) {
                     out.write(a);
