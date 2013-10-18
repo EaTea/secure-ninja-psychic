@@ -6,6 +6,8 @@ package edu.uwa.secure_ninja.developer;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -13,11 +15,15 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.HashMap;
+import java.util.jar.JarOutputStream;
+import java.util.jar.Manifest;
 
 /**
- * @author Edwin Tay() & Wan Ying Goh(20784663)
+ * @author Edwin Tay & Wan Ying Goh(20784663)
  *
  */
 public class MyDeveloper implements IDeveloper {
@@ -56,14 +62,19 @@ public class MyDeveloper implements IDeveloper {
                     client.getOutputStream());
             out.writeUTF(libraryName);
             out.writeInt(numLicenses);
-            String license = in.readUTF();
-            int number = in.readInt();
-            License temp = new License(license, softwareHouseIP, libraryName,
-                    client.getInetAddress().getHostName(), number);
-            System.out.println(client.getInetAddress());
-            System.out.println(softwareHouseIP);
-            licenses.put(license, temp);
-            //System.out.println("Dev: " + license);
+            int size = in.readInt();
+            if (size > 0) { //getting license
+                String license = in.readUTF();
+                License temp = new License(license, softwareHouseIP, libraryName,
+                        client.getInetAddress().getHostName(), numLicenses);
+           //     System.out.println(client.getInetAddress());
+           //     System.out.println(softwareHouseIP);
+                licenses.put(libraryName, temp);
+                //System.out.println("Dev: " + license);
+            } else {
+                System.out.printf("Software house %s\n doesn't have the %s",
+                        softwareHouseIP.getHostName(), libraryName);
+            }
             in.close();
             out.close();
             client.close();
@@ -76,16 +87,93 @@ public class MyDeveloper implements IDeveloper {
      *
      */
     public boolean linkFiles(InetAddress linkBrokerIP, List<File> classFiles,
-            List<License> licenses, String JARName, int portNumber) {
+            List<String> libraryNames, String JARName, int portNumber) {
         // TODO Auto-generated method stub
+        boolean linkSuccess = false;
         try {
             Socket client = new Socket(linkBrokerIP, portNumber);
-            InputStream in = client.getInputStream();
-            OutputStream out = client.getOutputStream();
+            DataInputStream in = new DataInputStream(client.getInputStream());
+            DataOutputStream out =
+                    new DataOutputStream(client.getOutputStream());
+            Iterator<String> it = libraryNames.iterator();
+            ArrayList<License> requests = new ArrayList<License>();
+            while (it.hasNext()) {
+                String lic = it.next();
+                License temp = licenses.get(lic);
+                if (temp != null) {
+                    if (temp.getNumberLicenses() > 0) {
+                        requests.add(temp);
+                    } else {
+                        it.remove();
+                        System.out.printf("We don't have a license for %s\n",
+                                lic);
+                        client.close();
+                        in.close();
+                        out.close();
+                        return false;
+                    }
+                } else {
+                    System.out.printf("We don't have a license for %s\n",
+                            lic);
+                    client.close();
+                    in.close();
+                    out.close();
+                    return false;
+                }
+            }
+            out.writeInt(JARName.length());
+            out.writeUTF(JARName);
+            out.writeInt(requests.size());
+            for (License s: requests) {
+                String swhIP = s.getSoftwareHouseIP().getHostName();
+                out.writeInt(swhIP.length());
+                out.writeUTF(swhIP);
+                String lic = s.getLicenseString();
+                out.writeInt(lic.length());
+                out.writeUTF(lic);
+            }
+            int success = in.readInt();
+            if (success == 0) {
+                out.writeInt(classFiles.size());
+                for (File file: classFiles) {
+                    FileInputStream fileIn = new FileInputStream(file);
+                    String path = file.getPath();
+                    out.writeInt(path.length());
+                    out.writeUTF(path);
+                    out.writeLong(file.length());
+                    int a;
+                    while ((a = fileIn.read()) != -1) {
+                        out.write(a);
+                    }
+                    fileIn.close();
+                }
+                //read in bytes from Linkbroker
+                FileOutputStream stream =
+                        new FileOutputStream(JARName + ".jar");
+                JarOutputStream jarOut =
+                        new JarOutputStream(stream, new Manifest());
+                long size = in.readLong();
+                int a;
+                for (long s = 0; s < size; s++) {
+                    a = in.read();
+                    if (a == -1) {
+                        System.err.println(
+                                "Error while receiving from linkbroker"); break;
+                    }
+                    jarOut.write(a);
+                }
+                jarOut.close();
+            } else {
+                System.out.println("Linking failed");
+                linkSuccess = false;
+            }
+            client.close();
+            in.close();
+            out.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return false;
+        return linkSuccess;
     }
 
 }
