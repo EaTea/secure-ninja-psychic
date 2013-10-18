@@ -6,6 +6,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.List;
 import java.util.jar.JarEntry;
@@ -18,7 +20,23 @@ import java.util.jar.Manifest;
  *
  */
 public class MyLinkBroker {
+    
+    public void setPortNumber(int portNum) {
+        this.portNumber = portNum;
+    }
+    
+    public int getPortNumber() {
+        return this.portNumber;
+    }
+    
+    public MyLinkBroker(int portNum) {
+        this.setPortNumber(portNum);
+    }
+    
     private int portNumber;
+    
+    private ServerSocket server;
+    
     /**
      * 
      * @param connection connection with developer
@@ -33,10 +51,12 @@ public class MyLinkBroker {
                     new DataOutputStream(connection.getOutputStream());
             int JARNameLen = in.readInt();
             String JARName = in.readUTF();
+            System.err.println(JARName);
             FileOutputStream stream = new FileOutputStream(JARName+".jar");
             JarOutputStream jarOut =
                     new JarOutputStream(stream, new Manifest());
             int requests = in.readInt();
+            System.err.println(requests);
             int count = 0;
             Socket[] swhConnections = new Socket[requests];
             DataInputStream[] swhIns = new DataInputStream[requests];
@@ -44,14 +64,19 @@ public class MyLinkBroker {
             for (int i = 0; i < requests; i++) {
                 int swhIPLen = in.readInt();
                 String swhIP = in.readUTF();
-                swhConnections[i] = new Socket(swhIP, portNumber);
+                System.err.println(swhIPLen + " " + swhIP);
+                swhConnections[i] = new Socket(swhIP, 1778 /*(testing purposes) portNumber*/);
+                System.err.println(swhConnections[i].getPort());
                 swhIns[i] =
                         new DataInputStream(swhConnections[i].getInputStream());
                 swhOuts[i] =
                       new DataOutputStream(swhConnections[i].getOutputStream());
                 swhOuts[i].writeInt(in.readInt());
-                swhOuts[i].writeUTF(in.readUTF());
+                String license = in.readUTF();
+                System.err.println("<"+license+">");
+                swhOuts[i].writeUTF(license);
                 long length = swhIns[i].readLong();
+                System.err.println(length);
                 if (length > -1) {
                     count++;
                     int len = swhIns[i].readInt();
@@ -62,6 +87,7 @@ public class MyLinkBroker {
                     jarOut.write(swhIns[i].read());
                 }
             }
+            System.err.println(count);
             if (count == requests) {
                 for (int i = 0; i < requests; i++) {
                     swhOuts[i].writeBoolean(true); //success
@@ -106,6 +132,26 @@ public class MyLinkBroker {
             in.close();
             jarOut.close();
         } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+    
+    public static void main(String[] args) {
+        int port = Integer.parseInt(args[0]);
+        MyLinkBroker bork = new MyLinkBroker(port);
+        System.err.println(bork.getPortNumber());
+        try {
+            bork.server = new ServerSocket(bork.getPortNumber(),
+                    0 /* Java Implementation Specific */,
+                    InetAddress.getLocalHost());
+            System.out.println("Link Broker " +
+                    bork.server.getInetAddress().getCanonicalHostName() + " " +
+                    bork.server.getLocalPort());
+            bork.getFiles(bork.server.accept());
+            bork.server.close();
+            
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
             e.printStackTrace();
         }
     }

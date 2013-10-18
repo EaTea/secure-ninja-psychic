@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.HashMap;
+import java.util.Scanner;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
 
@@ -39,8 +40,27 @@ public class MyDeveloper implements IDeveloper {
     public static void main(String[] args) {
         MyDeveloper mdev = new MyDeveloper();
         try {
-            InetAddress addr = InetAddress.getByName("180.216.16.55");
-            mdev.requestLicenses(10, "AAA", addr, 1777);
+            InetAddress addr = InetAddress.getLocalHost();
+            mdev.requestLicenses(10, "blah", addr, 1778);
+            System.out.println("How many class files?");
+            List<File> files = new ArrayList<File>();
+            //Scanner sc = new Scanner(System.in);
+            int nFiles = 1;//sc.nextInt();
+            System.out.println("Filenames?");
+            for (int i = 0; i < nFiles; i++) {
+                String fileName = "./bin/edu/uwa/secure_ninja/developer/MyDeveloper.class";
+//sc.next();
+                File f = new File(fileName);
+                files.add(f);
+            }
+            System.out.println("How many libraries?");
+            List<String> libNames = new ArrayList<String>();
+            int nLibs = 1;//sc.nextInt();
+            for (int i = 0; i < nLibs; i++) {
+                String libName = "blah";//sc.next();
+                libNames.add(libName);
+            }
+            mdev.linkFiles(InetAddress.getByName(args[0]), files, libNames, "BLAH", 1888);
         } catch (UnknownHostException e) {
             e.printStackTrace();
         }
@@ -56,12 +76,14 @@ public class MyDeveloper implements IDeveloper {
     public final void requestLicenses(int numLicenses, String libraryName,
                 InetAddress softwareHouseIP, int portNumber) {
         try {
+            System.err.println("Hello!");
             Socket client = new Socket(softwareHouseIP, portNumber);
             DataInputStream in = new DataInputStream(client.getInputStream());
             DataOutputStream out = new DataOutputStream(
                     client.getOutputStream());
             out.writeUTF(libraryName);
             out.writeInt(numLicenses);
+            System.err.println("My name is Elder Price!");
             int size = in.readInt();
             if (size > 0) { //getting license
                 String license = in.readUTF();
@@ -75,6 +97,7 @@ public class MyDeveloper implements IDeveloper {
                 System.out.printf("Software house %s\n doesn't have the %s",
                         softwareHouseIP.getHostName(), libraryName);
             }
+            System.err.println("I would like to share with you the most amazing book!");
             in.close();
             out.close();
             client.close();
@@ -91,12 +114,14 @@ public class MyDeveloper implements IDeveloper {
         // TODO Auto-generated method stub
         boolean linkSuccess = false;
         try {
+            System.err.println("Hello again!");
             Socket client = new Socket(linkBrokerIP, portNumber);
             DataInputStream in = new DataInputStream(client.getInputStream());
             DataOutputStream out =
                     new DataOutputStream(client.getOutputStream());
             Iterator<String> it = libraryNames.iterator();
             ArrayList<License> requests = new ArrayList<License>();
+            System.err.println("My name is Elder Green!");
             while (it.hasNext()) {
                 String lic = it.next();
                 License temp = licenses.get(lic);
@@ -121,6 +146,7 @@ public class MyDeveloper implements IDeveloper {
                     return false;
                 }
             }
+            System.err.println("It's a book about America!");
             out.writeInt(JARName.length());
             out.writeUTF(JARName);
             out.writeInt(requests.size());
@@ -133,6 +159,7 @@ public class MyDeveloper implements IDeveloper {
                 out.writeUTF(lic);
             }
             int success = in.readInt();
+            System.err.println("A long long time ago! " + success);
             if (success == 0) {
                 out.writeInt(classFiles.size());
                 for (File file: classFiles) {
