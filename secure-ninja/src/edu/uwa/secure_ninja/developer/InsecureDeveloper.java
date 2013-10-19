@@ -56,28 +56,43 @@ public class InsecureDeveloper {
             System.out.println("Sending licenses");
 
             int count = 0;
+            
+            try {
+                System.out.println("Sending number of licenses");
+                outStream.writeInt(requestedLicenses.size());
+            } catch(IOException e) {
+                System.err.println("Error: encountered I/O error whilst writing"
+                        + " number of licenses to network");
+                e.printStackTrace();
+                count = -1;
+            }
 
-            for (License lic : requestedLicenses) {
-                try {
-                    System.out.println("Writing license to network");
-                    outStream.writeUTF(lic.getSoftwareHouseIP()
-                            .getCanonicalHostName());
-                    outStream.writeUTF(lic.getLicenseString());
-                    outStream.writeUTF(lic.getDeveloperID());
-                    if (inStream.readBoolean()) {
-                        System.out.println(
+            if (count != -1) {
+                for (License lic : requestedLicenses) {
+                    try {
+                        System.out.println("Writing license to network");
+                        outStream.writeUTF(lic.getSoftwareHouseIP()
+                                .getCanonicalHostName());
+                        outStream.writeInt(lic.getPort());
+                        outStream.writeUTF(lic.getLicenseString());
+                        
+                        if (inStream.readBoolean()) {
+                            decrementLicense(lic.getLibraryName());
+                            count++;
+                            System.out.println(
                                 "Licsense used successfully, removing license");
-                        decrementLicense(lic.getLibraryName());
-                        count++;
-                        // FIXME: assumption about which licenses should be
-                        // removed could be dangerous
-                    } else {
-                        System.err.println("Something went wrong on the"
-                                + " linker's end");
+                            // FIXME: assumption about which licenses should be
+                            // removed could be dangerous
+                        } else {
+                            System.out.println("Something went wrong on the"
+                                    + " linker's end");
+                            break;
+                        }
+                    } catch (IOException e) {
+                        System.err.println("Error: I/O error sending license");
+                        e.printStackTrace();
+                        break;
                     }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    break;
                 }
             }
 
@@ -102,12 +117,12 @@ public class InsecureDeveloper {
                         for (File f : classFiles) {
                             System.out.println("Sending " + f.getName()
                                     + " across network");
-                            if (!NetworkUtilities.writeFile(connection, f)) {
+                            if (NetworkUtilities.writeFile(connection, f)) {
+                                count++;
+                            } else {
                                 System.err.println("Error occurred sending "
                                         + f.getAbsolutePath());
                                 break;
-                            } else {
-                                count++;
                             }
                         }
                     } catch (IOException e) {
@@ -121,16 +136,15 @@ public class InsecureDeveloper {
                         try {
                             FileOutputStream target =
                                 new FileOutputStream(jarName + ".jar");
-                            if (!NetworkUtilities.readFile(connection, target,
+                            if (NetworkUtilities.readFile(connection, target,
                                     false /* not reading classFiles to JAR */))
                             {
-                                System.err.println("Error occurred"
-                                        + " receiving " + jarName + ".jar");
-                            } else {
                                 System.out.println("Successfully received"
                                         + " JAR file");
                                 jarFile = new File(jarName + ".jar");
-                            }
+                            } else {
+                                System.out.println("Error occurred"
+                                        + " receiving " + jarName + ".jar");                            }
                         } catch (IOException e) {
                             System.err.println("Error: Receiving JAR file"
                                     + " failed");
@@ -183,7 +197,8 @@ public class InsecureDeveloper {
                     addLicense(libraryName, new License(license,
                             connection.getInetAddress(), libraryName,
                             InetAddress.getLocalHost().getCanonicalHostName(),
-                            1 /* how many uses a license has */));
+                            1 /* how many uses a license has */,
+                            connection.getPort()));
                 }
 
                 if (nLicReturned <= 0) {
@@ -269,7 +284,7 @@ public class InsecureDeveloper {
 
                 System.out.println("How many required libraries?");
                 int nLibs = sc.nextInt();
-                System.out.printf("Please input %d libraries", nLibs);
+                System.out.printf("Please input %d libraries\n", nLibs);
                 List<String> libNames = new ArrayList<String>();
                 for (int i = 0; i < nLibs; i++) {
                     libNames.add(sc.next());
@@ -277,7 +292,7 @@ public class InsecureDeveloper {
 
                 System.out.println("How many files to link?");
                 int nFiles = sc.nextInt();
-                System.out.printf("Please input %d class file paths", nFiles);
+                System.out.printf("Please input %d class file paths\n", nFiles);
                 List<File> classFiles = new ArrayList<File>();
                 for (int i = 0; i < nFiles; i++) {
                     classFiles.add(new File(sc.next()));
