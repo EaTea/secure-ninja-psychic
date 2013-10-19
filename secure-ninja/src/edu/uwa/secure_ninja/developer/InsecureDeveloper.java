@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Queue;
 import java.util.Scanner;
 import java.util.Stack;
@@ -20,7 +21,7 @@ import edu.uwa.secure_ninja.NetworkUtilities;
 
 public class InsecureDeveloper {
 
-    private HashMap<String, Queue<License>> licenseMap;
+    private Map<String, Queue<License>> licenseMap;
 
     public InsecureDeveloper() throws UnknownHostException {
         System.out.println("Developer created at "
@@ -63,8 +64,17 @@ public class InsecureDeveloper {
                             .getCanonicalHostName());
                     outStream.writeUTF(lic.getLicenseString());
                     outStream.writeUTF(lic.getDeveloperID());
-                    count++;
-                    decrementLicense(lic.getLibraryName());
+                    if (inStream.readBoolean()) {
+                        System.out.println(
+                                "Licsense used successfully, removing license");
+                        decrementLicense(lic.getLibraryName());
+                        count++;
+                        // FIXME: assumption about which licenses should be
+                        // removed could be dangerous
+                    } else {
+                        System.err.println("Something went wrong on the"
+                                + " linker's end");
+                    }
                 } catch (IOException e) {
                     e.printStackTrace();
                     break;
@@ -136,6 +146,9 @@ public class InsecureDeveloper {
 
             NetworkUtilities.closeSocketDataInputStream(inStream, connection);
             NetworkUtilities.closeSocketDataOutputStream(outStream, connection);
+            
+            System.out.println("<-----End Communication----->");
+            System.out.println();
         }
         return jarFile;
     }
@@ -150,30 +163,34 @@ public class InsecureDeveloper {
         if (inStream != null && outStream != null) {
             // later would need to send client credentials
             try {
-                System.out.printf("Getting %d licenses for %s from %s",
+                outStream.writeUTF("REQ");
+
+                System.out.printf("Getting %d licenses for %s from %s\n",
                         numLicense, libraryName,
                         connection.getInetAddress().getCanonicalHostName()
                                 + ":" + connection.getPort());
                 outStream.writeUTF(libraryName);
                 outStream.writeInt(numLicense);
+                // Might need to send developer ID
 
                 int nLicReturned = inStream.readInt();
-                System.out.printf("%s returning %d licenses", connection
+                System.out.printf("%s returning %d licenses\n", connection
                         .getInetAddress().getCanonicalHostName()
                         + ":"
                         + connection.getPort(), nLicReturned);
                 for (int i = 0; i < nLicReturned; i++) {
-                    addLicense(libraryName, new License(inStream.readUTF(),
+                    String license = inStream.readUTF();
+                    addLicense(libraryName, new License(license,
                             connection.getInetAddress(), libraryName,
                             InetAddress.getLocalHost().getCanonicalHostName(),
                             1 /* how many uses a license has */));
                 }
 
                 if (nLicReturned <= 0) {
-                    System.out.printf("%s declined to send licenses",
+                    System.out.printf("%s declined to send licenses\n",
                             connection.getInetAddress().getCanonicalHostName());
                 } else {
-                    System.out.printf("Received %d licenses from %s",
+                    System.out.printf("Received %d licenses from %s\n",
                             nLicReturned, connection.getInetAddress()
                                     .getCanonicalHostName());
                 }
@@ -181,6 +198,9 @@ public class InsecureDeveloper {
                         connection);
                 NetworkUtilities.closeSocketDataOutputStream(outStream,
                         connection);
+
+                System.out.println("<-----End Communication----->");
+                System.out.println();
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -278,8 +298,10 @@ public class InsecureDeveloper {
             } else if (command.equalsIgnoreCase("Quit")) {
                 System.out.println("Bye bye!");
                 break;
+            } else {
+                System.out.println("Sorry, that was not a recognised command.");
             }
-        } while (sc.hasNext());
+        } while (true);
         sc.close();
     }
 
