@@ -88,7 +88,7 @@ public class MyDeveloper implements IDeveloper {
             if (size > 0) { //getting license
                 String license = in.readUTF();
                 License temp = new License(license, softwareHouseIP, libraryName,
-                        client.getInetAddress().getHostName(), numLicenses);
+                        client.getInetAddress().getHostName(), numLicenses, client.getPort());
            //     System.out.println(client.getInetAddress());
            //     System.out.println(softwareHouseIP);
                 licenses.put(libraryName, temp);

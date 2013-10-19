@@ -87,7 +87,8 @@ public class MySoftwareHouse {
  //               out.writeInt(numLicenses);
     //            System.out.println(licence);
                 License temp = new License(licence, server.getInetAddress(),
-                   library, connection.getInetAddress().getHostName(), numLicenses);
+                   library, connection.getInetAddress().getHostName(), numLicenses,
+                   connection.getPort());
                 clientLicenses.put(licence, temp);
             } else {
                 out.writeInt(0); //0 means no license

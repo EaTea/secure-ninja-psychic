@@ -30,6 +30,16 @@ public class License {
      * 
      */
     private int numberLicenses;
+    
+    private int port;
+    
+    private void setPort(int port) {
+        this.port = port;
+    }
+    
+    public int getPort() {
+        return port;
+    }
     /**
      * 
      * @param license
@@ -38,12 +48,13 @@ public class License {
      * @param developerIP
      */
     public License(String license, InetAddress swhIP, String name,
-            String developerID, int licenses) {
+            String developerID, int licenses, int port) {
         this.licenseString = license;
         this.softwareHouseIP = swhIP;
         this.libraryName = name;
         this.setDeveloperID(developerID);
         this.numberLicenses = licenses;
+        this.port = port;
     }
     /**
      * 
