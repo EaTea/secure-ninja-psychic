@@ -163,7 +163,8 @@ public class InsecureSWH {
                     }
                 }
             } else {
-                System.out.println("Could not ");
+                System.out.println("Could not verify license, sending"
+                        + " rejection to Linker");
                 DataOutputStream outStream =
                     NetworkUtilities.getDataOutputStream(connection);
 
@@ -246,7 +247,8 @@ public class InsecureSWH {
                                         InetAddress.getLocalHost(), libName,
                                         connection.getInetAddress()
                                                 .getCanonicalHostName(),
-                                                1 /* number of uses */));
+                                                1 /* number of uses */,
+                                                connection.getLocalPort()));
                     }
                 } catch (IOException e) {
                     System.err.println("Error: encountered I/O error whilst "
@@ -280,6 +282,10 @@ public class InsecureSWH {
 
     public static void main(String[] args) {
         InsecureSWH swh = null;
+        if (args.length < 1) {
+            System.out.println("Usage: requires one integer parameter for port");
+            return;
+        }
         int portNumber = Integer.parseInt(args[0]);
         try {
             swh = new InsecureSWH(portNumber);
@@ -300,7 +306,7 @@ public class InsecureSWH {
 
             System.out.printf("Enter %d files in format:\n"
                     + "\t<LibraryName> <Path>\n" + "Example:\n"
-                    + "\tsample.google.buzz ./sample/google/buzz", nFiles);
+                    + "\tsample.google.buzz ./sample/google/buzz\n", nFiles);
             for (int i = 0; i < nFiles; i++) {
                 String libName, libPath;
                 libName = sc.next();
