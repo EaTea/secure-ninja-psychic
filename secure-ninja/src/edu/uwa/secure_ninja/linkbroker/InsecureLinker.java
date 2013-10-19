@@ -129,7 +129,6 @@ public class InsecureLinker {
                                     break;
                                 }
                                 
-                                jarOut.close();
                                 swhCon.close();
                             } catch (UnknownHostException e) {
                                 System.err.println("Error: could not resolve"
@@ -156,6 +155,12 @@ public class InsecureLinker {
                     
                     if (count == nLicenses) {
                         System.out.println("Successfully read all files into JAR");
+                        try {
+                            outStream.writeBoolean(true);
+                        } catch(IOException e) {
+                            System.err.println("Error: Could not notify developer of success");
+                            e.printStackTrace();
+                        }
                         
                         System.out.println("Reading class files from Developer");
                         int nFiles = -1;
@@ -175,6 +180,13 @@ public class InsecureLinker {
                             System.err.println("Error: IO Exception whilst reading class files");
                             e.printStackTrace();
                         }
+
+                        try {
+                            jarOut.close();
+                        } catch (IOException e) {
+                            System.err.println("Error: could not properly close JarOutputStream");
+                            e.printStackTrace();
+                        }
                         
                         if (nFiles != -1 && count == nFiles) {
                             File jarFile = new File("temp.jar");
@@ -184,16 +196,17 @@ public class InsecureLinker {
                                 System.out.println("Could not send JAR File");
                             }
                         }
+                    } else {
+                        try {
+                            System.out.println("Linking fail, notifying developer");
+                            outStream.writeBoolean(false);
+                        } catch (IOException e) {
+                            System.err.println("Error: could not notify developer");
+                            e.printStackTrace();
+                        }
                     }
                 } else {
                     System.out.println("Could not read number of licenses");
-                }
-                
-                try {
-                    jarOut.close();
-                } catch (IOException e) {
-                    System.err.println("Error: could not properly close JarOutputStream");
-                    e.printStackTrace();
                 }
             }
             NetworkUtilities.closeSocketDataInputStream(inStream, connection);
