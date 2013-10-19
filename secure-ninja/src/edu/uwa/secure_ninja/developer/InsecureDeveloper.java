@@ -22,34 +22,10 @@ public class InsecureDeveloper {
 
     private HashMap<String, Queue<License>> licenseMap;
 
-    private String hostName;
-
-    public String getHostName() {
-        return hostName;
-    }
-
-    private void setHostName(final String hostName) {
-        this.hostName = hostName;
-    }
-
-    public int getPortNumber() {
-        return portNumber;
-    }
-
-    private void setPortNumber(int portNumber) {
-        this.portNumber = portNumber;
-    }
-
-    private int portNumber;
-
-    public InsecureDeveloper(String hostName, int portNumber) {
+    public InsecureDeveloper() throws UnknownHostException {
+        System.out.println("Developer created at "
+                + InetAddress.getLocalHost().getCanonicalHostName());
         licenseMap = new HashMap<String, Queue<License>>();
-        setHostName(hostName);
-        setPortNumber(portNumber);
-    }
-
-    public InsecureDeveloper(int portNumber) throws UnknownHostException {
-        this(InetAddress.getLocalHost().getCanonicalHostName(), portNumber);
     }
 
     protected File linkFiles(List<File> classFiles, List<String> libNames,
@@ -308,15 +284,14 @@ public class InsecureDeveloper {
     }
 
     public static void main(String[] args) {
-        int portNumber = Integer.parseInt(args[0]);
         InsecureDeveloper dev = null;
         try {
-            dev = new InsecureDeveloper(portNumber);
+            dev = new InsecureDeveloper();
         } catch (UnknownHostException e) {
-            System.err.println("Error: could not resolve hostname");
+            System.err.println("Error: host name could"
+                    + " not be resolved");
             e.printStackTrace();
         }
-
         if (dev != null) {
             dev.processCommands();
         }
