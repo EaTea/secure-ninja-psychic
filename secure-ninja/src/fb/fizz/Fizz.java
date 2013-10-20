@@ -1,4 +1,4 @@
-package com.fb.fizz;
+package fb.fizz;
 
 public class Fizz {
 

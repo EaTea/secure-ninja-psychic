@@ -18,8 +18,8 @@ import java.util.Scanner;
 import java.util.Set;
 
 import snp.NetworkUtilities;
-import snp.developer.InsecureDeveloper;
-import snp.developer.License;
+import snp.dev.InsecureDeveloper;
+import snp.dev.License;
 
 public class InsecureSWH {
 

@@ -1,7 +1,7 @@
 /**
  * 
  */
-package snp.developer;
+package snp.dev;
 
 import java.io.File;
 import java.net.InetAddress;

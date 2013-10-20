@@ -1,7 +1,7 @@
 package indie.fizzbuzz;
 
-import com.fb.fizz.Fizz;
-import com.goo.buzz.Buzz;
+import fb.fizz.Fizz;
+import goo.buzz.Buzz;
 
 public class FizzBuzz {
 

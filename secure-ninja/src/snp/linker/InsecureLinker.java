@@ -1,4 +1,4 @@
-package snp.linkbroker;
+package snp.linker;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;

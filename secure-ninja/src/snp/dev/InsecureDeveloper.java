@@ -1,4 +1,4 @@
-package snp.developer;
+package snp.dev;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;

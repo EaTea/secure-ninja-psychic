@@ -14,7 +14,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashMap;
 
-import snp.developer.License;
+import snp.dev.License;
 
 /**
  * @author wying1211

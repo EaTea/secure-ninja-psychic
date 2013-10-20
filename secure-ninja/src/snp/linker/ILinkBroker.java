@@ -1,7 +1,7 @@
 /**
  * 
  */
-package snp.linkbroker;
+package snp.linker;
 
 import java.io.File;
 import java.net.Socket;
