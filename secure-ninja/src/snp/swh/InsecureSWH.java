@@ -306,7 +306,7 @@ public class InsecureSWH {
 
             System.out.printf("Enter %d files in format:\n"
                     + "\t<LibraryName> <Path>\n" + "Example:\n"
-                    + "\tsample.google.buzz ./sample/google/buzz\n", nFiles);
+                    + "\tBuzz goo/bugg/Buzz.class\n", nFiles);
             for (int i = 0; i < nFiles; i++) {
                 String libName, libPath;
                 libName = sc.next();
