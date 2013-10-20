@@ -1,4 +1,4 @@
-package edu.uwa.secure_ninja.linkbroker;
+package snp.linkbroker;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -13,7 +13,7 @@ import java.net.UnknownHostException;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
 
-import edu.uwa.secure_ninja.NetworkUtilities;
+import snp.NetworkUtilities;
 
 public class InsecureLinker {
 

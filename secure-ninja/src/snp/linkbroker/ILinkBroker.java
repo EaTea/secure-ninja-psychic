@@ -1,7 +1,7 @@
 /**
  * 
  */
-package edu.uwa.secure_ninja.linkbroker;
+package snp.linkbroker;
 
 import java.io.File;
 import java.net.Socket;

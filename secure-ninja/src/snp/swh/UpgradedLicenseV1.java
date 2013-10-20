@@ -1,4 +1,4 @@
-package edu.uwa.secure_ninja.swh;
+package snp.swh;
 
 import java.net.InetAddress;
 

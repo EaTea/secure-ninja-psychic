@@ -1,7 +1,7 @@
 /**
  * 
  */
-package edu.uwa.secure_ninja.swh;
+package snp.swh;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -14,7 +14,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashMap;
 
-import edu.uwa.secure_ninja.developer.License;
+import snp.developer.License;
 
 /**
  * @author wying1211

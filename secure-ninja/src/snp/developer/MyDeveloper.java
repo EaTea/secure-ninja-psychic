@@ -1,7 +1,7 @@
 /**
  * 
  */
-package edu.uwa.secure_ninja.developer;
+package snp.developer;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;

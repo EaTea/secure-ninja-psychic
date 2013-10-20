@@ -1,4 +1,4 @@
-package edu.uwa.secure_ninja;
+package snp;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;

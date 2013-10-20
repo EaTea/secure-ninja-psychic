@@ -1,4 +1,4 @@
-package edu.uwa.secure_ninja.swh;
+package snp.swh;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -17,9 +17,9 @@ import java.util.Map;
 import java.util.Scanner;
 import java.util.Set;
 
-import edu.uwa.secure_ninja.NetworkUtilities;
-import edu.uwa.secure_ninja.developer.InsecureDeveloper;
-import edu.uwa.secure_ninja.developer.License;
+import snp.NetworkUtilities;
+import snp.developer.InsecureDeveloper;
+import snp.developer.License;
 
 public class InsecureSWH {
 

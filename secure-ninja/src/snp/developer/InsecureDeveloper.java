@@ -1,4 +1,4 @@
-package edu.uwa.secure_ninja.developer;
+package snp.developer;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -17,7 +17,7 @@ import java.util.Queue;
 import java.util.Scanner;
 import java.util.Stack;
 
-import edu.uwa.secure_ninja.NetworkUtilities;
+import snp.NetworkUtilities;
 
 public class InsecureDeveloper {
 

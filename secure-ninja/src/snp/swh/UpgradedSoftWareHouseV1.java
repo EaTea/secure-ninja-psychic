@@ -1,4 +1,4 @@
-package edu.uwa.secure_ninja.swh;
+package snp.swh;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -7,11 +7,12 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.util.HashMap;
+
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLSocket;
 
-import edu.uwa.secure_ninja.swh.UpgradedLicenseV1;
+import snp.swh.UpgradedLicenseV1;
 
 public class UpgradedSoftWareHouseV1 {
     /**

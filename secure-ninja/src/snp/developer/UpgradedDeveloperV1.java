@@ -1,7 +1,7 @@
 /**
  * 
  */
-package edu.uwa.secure_ninja.developer;
+package snp.developer;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -19,7 +19,7 @@ import java.util.List;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 
-import edu.uwa.secure_ninja.swh.UpgradedLicenseV1;
+import snp.swh.UpgradedLicenseV1;
 
 /**
  * @author wying1211
