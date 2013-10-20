@@ -10,6 +10,7 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.jar.Attributes;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
 
@@ -61,9 +62,20 @@ public class InsecureLinker {
         
         if (inStream != null && outStream != null) {
             JarOutputStream jarOut = null;
+            Manifest manifest = null;
             try {
+            	 manifest = new Manifest();
+            	 manifest.getMainAttributes().put(Attributes.Name.MANIFEST_VERSION, "1.0");
+            	 manifest.getMainAttributes().put(Attributes.Name.CLASS_PATH, ".");
+            	 
+        		 String mainFile = inStream.readUTF();
+        		 mainFile = mainFile.replaceAll("/", ".").substring(0, mainFile.lastIndexOf(".class"));
+                 manifest.getMainAttributes().put(Attributes.Name.MAIN_CLASS, mainFile);
+                 
+                 System.err.println("DEBUG:main-point: " + mainFile);
+
                  jarOut = new JarOutputStream(
-                        new FileOutputStream("temp.jar"), new Manifest());
+                        new FileOutputStream("temp.jar"), manifest);
             } catch (FileNotFoundException e1) {
                 System.err.println("Error: could not create temp.jar");
                 e1.printStackTrace();
@@ -72,7 +84,8 @@ public class InsecureLinker {
                         + "JarOutputStream");
                 e1.printStackTrace();
             }
-            if (jarOut != null) {
+            
+            if (jarOut != null && manifest != null) {
                 int nLicenses = 0;
                 try {
                     System.out.println("Reading number of licenses");
@@ -148,7 +161,11 @@ public class InsecureLinker {
                                 count = -1;
                                 break;
                             } catch (IOException e) {
-                                
+                                System.err.println("Error: could not tell developer"
+                                		+ " that we could not read licenses");
+                                e.printStackTrace();
+                                count = -1;
+                                break;
                             }
                         }
                     }
