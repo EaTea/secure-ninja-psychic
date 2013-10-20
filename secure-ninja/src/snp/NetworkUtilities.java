@@ -83,6 +83,8 @@ public class NetworkUtilities {
                 System.out.println("File path: " + filePath);
 
                 if (isWritingJAR) {
+                	// FIXME: filePath separators may need to change
+                	// e.g. ("/" -> "\")
                     System.out.println("Constructing a JAR file");
                     JarOutputStream jarTarget = (JarOutputStream) target;
                     jarTarget.putNextEntry(new JarEntry(filePath));
