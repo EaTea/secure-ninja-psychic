@@ -210,7 +210,16 @@ public class InsecureLinker {
                             if (NetworkUtilities.writeFile(connection, jarFile)) {
                                 System.out.println("Sent JAR file successfully");
                             } else {
-                                System.out.println("Could not send JAR File");
+                                System.out.println("Could not send JAR file");
+                            }
+                            
+                            System.out.println("Cleanup: deleting JAR file");
+                            if (jarFile.delete()) {
+                            	System.out.println("Successfully deleted"
+                            			+ " temp.jar");
+                            } else {
+                            	System.out.println("Something went wrong,"
+                            			+ " could not delete temp.jar");
                             }
                         }
                     } else {
