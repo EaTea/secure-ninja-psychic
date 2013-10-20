@@ -7,32 +7,38 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.InetAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.jar.Attributes;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
+import javax.net.ssl.SSLServerSocketFactory;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLServerSocket;
 
 import snp.NetworkUtilities;
 
 public class LinkerV2 {
 
-    private ServerSocket serverConnection;
+    private SSLServerSocketFactory sslServFact;
+    private SSLServerSocket serverConnection;
+    private SSLSocketFactory sslFact;
     
     public LinkerV2(int portNumber) throws UnknownHostException, IOException {
         System.out.printf("Creating new LinkBroker at %s:%d\n",
                 InetAddress.getLocalHost().getCanonicalHostName(),
                 portNumber);
-        serverConnection = new ServerSocket(portNumber, 0,
-                InetAddress.getLocalHost());
+        sslFact = (SSLSocketFactory) SSLSocketFactory.getDefault();
+        sslServFact = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
+        serverConnection = (SSLServerSocket) sslServFact.createServerSocket(
+                portNumber, 0, InetAddress.getLocalHost());
     }
     
     private void processRequests() {
         while (true) {
-            Socket s = null;
+            SSLSocket s = null;
             try {
-                s = serverConnection.accept();
+                s = (SSLSocket) serverConnection.accept();
                 System.out.println("New connection from "
                         + s.getInetAddress().getCanonicalHostName()
                         + ":" + s.getPort());
@@ -54,7 +60,7 @@ public class LinkerV2 {
         }
     }
      
-    private void packageJarFile(Socket connection) {
+    private void packageJarFile(SSLSocket connection) {
         DataInputStream inStream =
             NetworkUtilities.getDataInputStream(connection);
         DataOutputStream outStream =
@@ -113,11 +119,11 @@ public class LinkerV2 {
                         }
 
                         if (swhIP != null && license != null && swhPort != -1) {
-                            Socket swhCon;
+                            SSLSocket swhCon;
                             try {
                                 System.out.println("Establishing socket to "
                                         + swhIP + ":" + swhPort);
-                                swhCon = new Socket(swhIP, swhPort);
+                                swhCon = (SSLSocket) sslFact.createSocket(swhIP, swhPort);
                                 DataOutputStream swhOut =
                                     NetworkUtilities.getDataOutputStream(swhCon);
                                 

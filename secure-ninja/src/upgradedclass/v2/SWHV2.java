@@ -5,31 +5,44 @@ import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
 import java.net.UnknownHostException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.Map;
 import java.util.Scanner;
-import java.util.Set;
+import javax.net.ssl.SSLServerSocketFactory;
+import javax.net.ssl.SSLServerSocket;
+import javax.net.ssl.SSLSocket;
 
 import snp.NetworkUtilities;
-import snp.dev.InsecureDeveloper;
-import snp.dev.License;
 
 public class SWHV2 {
 
-    private Map<String, License> clientLicenses;
+    private Map<String, LicenseV2> clientLicenses;
 
-    private void addLicense(String licenseString, License l) {
+    private SSLServerSocketFactory sslservfact;
+    
+    private SSLServerSocket serverConnection;
+    
+    public SWHV2(int serverPort) throws UnknownHostException, IOException {
+        clientLicenses = new HashMap<String, LicenseV2>();
+        libraries = new HashMap<String, File>();
+        sslservfact = (SSLServerSocketFactory)
+                SSLServerSocketFactory.getDefault();
+        serverConnection = (SSLServerSocket) sslservfact.createServerSocket(
+                serverPort, 0 /* impl. specific */,
+                InetAddress.getLocalHost());
+        System.out.println("Created a new SoftwareHouse at "
+                + serverConnection.getInetAddress().getCanonicalHostName()
+                + ":" + serverConnection.getLocalPort());
+    }
+
+    private void addLicense(String licenseString, LicenseV2 l) {
         clientLicenses.put(licenseString, l);
     }
 
-    private License getLicense(String license) {
+    private LicenseV2 getLicense(String license) {
         if (clientLicenses.containsKey(license)) {
             return clientLicenses.get(license);
         }
@@ -41,7 +54,7 @@ public class SWHV2 {
     }
 
     public boolean verifyLicense(String license) {
-        License temp = getLicense(license);
+        LicenseV2 temp = getLicense(license);
         if (temp != null) {
             if (temp.getNumberLicenses() > 0) {
                 return true;
@@ -58,24 +71,13 @@ public class SWHV2 {
         libraries.put(libName, f);
     }
 
-    private ServerSocket serverConnection;
-
-    public SWHV2(int serverPort) throws UnknownHostException, IOException {
-        clientLicenses = new HashMap<String, License>();
-        libraries = new HashMap<String, File>();
-        serverConnection = new ServerSocket(serverPort, 0 /* impl. specific */,
-                InetAddress.getLocalHost());
-        System.out.println("Created a new SoftwareHouse at "
-                + serverConnection.getInetAddress().getCanonicalHostName()
-                + ":" + serverConnection.getLocalPort());
-    }
 
     private void listenForCommands() {
-        Socket connection = null;
+        SSLSocket connection = null;
         System.out.println();
         do {
             try {
-                connection = serverConnection.accept();
+                connection = (SSLSocket) serverConnection.accept();
             } catch (IOException e) {
                 System.err.println("Error: IO error whilst"
                         + " accepting connection");
@@ -122,7 +124,7 @@ public class SWHV2 {
         } while (true);
     }
 
-    private void acceptLicenses(Socket connection) {
+    private void acceptLicenses(SSLSocket connection) {
         DataInputStream inStream = NetworkUtilities
                 .getDataInputStream(connection);
         
@@ -140,7 +142,7 @@ public class SWHV2 {
             }
 
             if (verifyLicense(license) && developerID != null) {
-                License temp = clientLicenses.get(license);
+                LicenseV2 temp = clientLicenses.get(license);
                 String libraryName = temp.getLibraryName();
                 System.out.printf("License corresponds to library %s\n",
                         libraryName);
@@ -191,7 +193,7 @@ public class SWHV2 {
         return license;
     }
 
-    private void generateLicenses(Socket connection) {
+    private void generateLicenses(SSLSocket connection) {
         DataInputStream inStream = NetworkUtilities
                 .getDataInputStream(connection);
         DataOutputStream outStream = NetworkUtilities
@@ -243,7 +245,7 @@ public class SWHV2 {
                         outStream.writeUTF(license);
                         
                         addLicense(license,
-                                new License(license,
+                                new LicenseV2(license,
                                         InetAddress.getLocalHost(), libName,
                                         connection.getInetAddress()
                                                 .getCanonicalHostName(),

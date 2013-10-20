@@ -14,7 +14,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Scanner;
-import java.util.Stack;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.SSLSocket;
 
@@ -23,7 +22,7 @@ import snp.NetworkUtilities;
 public class DeveloperV2 {
 
     private SSLSocketFactory sslfact;
-    
+
     private Map<String, Queue<LicenseV2>> licenseMap;
 
     public DeveloperV2() throws UnknownHostException {
@@ -36,8 +35,8 @@ public class DeveloperV2 {
     protected File linkFiles(List<File> classFiles, List<String> libNames,
             final String jarName, SSLSocket connection) {
 
-    	// FIXME: Change to external method and perform before connection is
-    	// opened
+        // FIXME: Change to external method and perform before connection is
+        // opened
         System.out.println("Checking licenses");
         List<LicenseV2> requestedLicenses = new ArrayList<LicenseV2>();
 
@@ -62,15 +61,15 @@ public class DeveloperV2 {
             System.out.println("Sending licenses");
 
             int count = 0;
-            
+
             try {
                 // send the main entry point across
                 outStream.writeUTF(classFiles.get(0).getPath());
-            }
-            catch (IOException e) {
-            	System.err.println("Error: could not send across main file point");
-            	e.printStackTrace();
-            	count = -1;
+            } catch (IOException e) {
+                System.err
+                        .println("Error: could not send across main file point");
+                e.printStackTrace();
+                count = -1;
             }
 
             try {
@@ -78,8 +77,9 @@ public class DeveloperV2 {
                 // write -1 for an error occurring previously
                 outStream.writeInt(count == -1 ? -1 : requestedLicenses.size());
             } catch (IOException e) {
-                System.err.println("Error: encountered I/O error whilst writing"
-                        + " number of licenses to network");
+                System.err
+                        .println("Error: encountered I/O error whilst writing"
+                                + " number of licenses to network");
                 e.printStackTrace();
                 count = -1;
             }
@@ -92,12 +92,12 @@ public class DeveloperV2 {
                                 .getCanonicalHostName());
                         outStream.writeInt(lic.getPort());
                         outStream.writeUTF(lic.getLicenseString());
-                        
+
                         if (inStream.readBoolean()) {
                             decrementLicense(lic.getLibraryName());
                             count++;
-                            System.out.println(
-                                "Licsense used successfully, removing license");
+                            System.out
+                                    .println("Licsense used successfully, removing license");
                             // FIXME: assumption about which licenses should be
                             // removed could be dangerous
                         } else {
@@ -134,7 +134,7 @@ public class DeveloperV2 {
                         for (File f : classFiles) {
                             System.out.println("Sending " + f.getName()
                                     + " across network");
-                            
+
                             if (NetworkUtilities.writeFile(connection, f)) {
                                 count++;
                             } else {
@@ -152,11 +152,10 @@ public class DeveloperV2 {
                         System.out.println("Receiving JAR file from"
                                 + " LinkBroker");
                         try {
-                            FileOutputStream target =
-                                new FileOutputStream(jarName + ".jar");
+                            FileOutputStream target = new FileOutputStream(
+                                    jarName + ".jar");
                             if (NetworkUtilities.readFile(connection, target,
-                                    false /* not reading classFiles to JAR */))
-                            {
+                                    false /*not reading classFiles to JAR */)) {
                                 System.out.println("Successfully received"
                                         + " JAR file");
                                 jarFile = new File(jarName + ".jar");
@@ -179,7 +178,7 @@ public class DeveloperV2 {
 
             NetworkUtilities.closeSocketDataInputStream(inStream, connection);
             NetworkUtilities.closeSocketDataOutputStream(outStream, connection);
-            
+
             System.out.println("<-----End Communication----->");
             System.out.println();
         }
@@ -213,11 +212,12 @@ public class DeveloperV2 {
                         + connection.getPort(), nLicReturned);
                 for (int i = 0; i < nLicReturned; i++) {
                     String license = inStream.readUTF();
-                    addLicense(libraryName, new LicenseV2(license,
-                            connection.getInetAddress(), libraryName,
-                            InetAddress.getLocalHost().getCanonicalHostName(),
-                            1 /* how many uses a license has */,
-                            connection.getPort()));
+                    addLicense(libraryName,
+                            new LicenseV2(license, connection.getInetAddress(),
+                                    libraryName, InetAddress.getLocalHost()
+                                            .getCanonicalHostName(),
+                                            1 /*how many uses a license has*/,
+                                    connection.getPort()));
                 }
 
                 if (nLicReturned <= 0) {
@@ -284,8 +284,8 @@ public class DeveloperV2 {
                 int numLicenses = sc.nextInt();
 
                 try {
-                    SSLSocket connection = (SSLSocket)
-                            sslfact.createSocket(remoteHost, remotePort);
+                    SSLSocket connection = (SSLSocket) sslfact.createSocket(
+                            remoteHost, remotePort);
                     requestLicense(numLicenses, libName, connection);
                     connection.close();
                 } catch (UnknownHostException e) {
@@ -321,8 +321,8 @@ public class DeveloperV2 {
                 }
 
                 try {
-                    SSLSocket connection = (SSLSocket)
-                            sslfact.createSocket(remoteHost, remotePort);
+                    SSLSocket connection = (SSLSocket) sslfact.createSocket(
+                            remoteHost, remotePort);
                     linkFiles(classFiles, libNames, jarFileName, connection);
                     connection.close();
                 } catch (UnknownHostException e) {
@@ -348,8 +348,7 @@ public class DeveloperV2 {
         try {
             dev = new DeveloperV2();
         } catch (UnknownHostException e) {
-            System.err.println("Error: host name could"
-                    + " not be resolved");
+            System.err.println("Error: host name could" + " not be resolved");
             e.printStackTrace();
         }
         if (dev != null) {
