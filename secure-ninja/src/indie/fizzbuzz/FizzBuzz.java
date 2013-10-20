@@ -1,7 +1,7 @@
-package sample.littleguy.fizzbuzz;
+package indie.fizzbuzz;
 
-import sample.facebook.fizz.Fizz;
-import sample.google.buzz.Buzz;
+import com.fb.fizz.Fizz;
+import com.goo.buzz.Buzz;
 
 public class FizzBuzz {
 

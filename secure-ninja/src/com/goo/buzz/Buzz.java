@@ -1,4 +1,4 @@
-package sample.google.buzz;
+package com.goo.buzz;
 
 public class Buzz {
 
