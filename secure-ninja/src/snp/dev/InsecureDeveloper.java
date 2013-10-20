@@ -32,6 +32,8 @@ public class InsecureDeveloper {
     protected File linkFiles(List<File> classFiles, List<String> libNames,
             final String jarName, Socket connection) {
 
+    	// FIXME: Change to external method and perform before connection is
+    	// opened
         System.out.println("Checking licenses");
         List<License> requestedLicenses = new ArrayList<License>();
 
@@ -58,8 +60,19 @@ public class InsecureDeveloper {
             int count = 0;
             
             try {
+                // send the main entry point across
+                outStream.writeUTF(classFiles.get(0).getPath());
+            }
+            catch (IOException e) {
+            	System.err.println("Error: could not send across main file point");
+            	e.printStackTrace();
+            	count = -1;
+            }
+
+            try {
                 System.out.println("Sending number of licenses");
-                outStream.writeInt(requestedLicenses.size());
+                // write -1 for an error occurring previously
+                outStream.writeInt(count == -1 ? -1 : requestedLicenses.size());
             } catch(IOException e) {
                 System.err.println("Error: encountered I/O error whilst writing"
                         + " number of licenses to network");
@@ -117,6 +130,7 @@ public class InsecureDeveloper {
                         for (File f : classFiles) {
                             System.out.println("Sending " + f.getName()
                                     + " across network");
+                            
                             if (NetworkUtilities.writeFile(connection, f)) {
                                 count++;
                             } else {
@@ -144,7 +158,8 @@ public class InsecureDeveloper {
                                 jarFile = new File(jarName + ".jar");
                             } else {
                                 System.out.println("Error occurred"
-                                        + " receiving " + jarName + ".jar");                            }
+                                        + " receiving " + jarName + ".jar");
+                            }
                         } catch (IOException e) {
                             System.err.println("Error: Receiving JAR file"
                                     + " failed");
@@ -290,9 +305,11 @@ public class InsecureDeveloper {
                     libNames.add(sc.next());
                 }
 
+                // FIXME: Should check for 0 files
                 System.out.println("How many files to link?");
                 int nFiles = sc.nextInt();
                 System.out.printf("Please input %d class file paths\n", nFiles);
+                System.out.println("Note: 1st class file treated as main");
                 List<File> classFiles = new ArrayList<File>();
                 for (int i = 0; i < nFiles; i++) {
                     classFiles.add(new File(sc.next()));
