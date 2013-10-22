@@ -3,29 +3,18 @@ package upgradedclass.v2;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.security.KeyManagementException;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.security.UnrecoverableKeyException;
-import java.security.cert.CertificateException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
 
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLSocket;
-import javax.net.ssl.TrustManagerFactory;
-
 import snp.NetworkUtilities;
 
 public class SWHV2 {
@@ -43,7 +32,7 @@ public class SWHV2 {
         clientLicenses = new HashMap<String, LicenseV2>();
         libraries = new HashMap<String, File>();
         sslservfact = (SSLServerSocketFactory) 
-                getSSLServerSocketFactory(keyFile, trustFile, password);
+                SecurityUtilitiesV2.getSSLServerSocketFactory(keyFile, trustFile, password);
         serverConnection = (SSLServerSocket) sslservfact.createServerSocket(
                 serverPort, 0 /* impl. specific */,
                 InetAddress.getLocalHost());
@@ -52,58 +41,6 @@ public class SWHV2 {
                 + ":" + serverConnection.getLocalPort());
     }
     
-    private SSLServerSocketFactory getSSLServerSocketFactory(String keyFile,
-            String trustFile, String password) {
-        KeyStore keyStore;
-        KeyStore trustStore;
-        KeyManagerFactory kmf;
-        TrustManagerFactory tmf;
-        SSLContext ctx;
-        try {
-            //generate keystore
-            keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
-            keyStore.load(new FileInputStream(keyFile),
-                    password.toCharArray());
-            kmf = KeyManagerFactory.getInstance(KeyManagerFactory
-                    .getDefaultAlgorithm());
-            kmf.init(keyStore, password.toCharArray());
-
-            //generate trustStore
-            trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
-            trustStore.load(new FileInputStream(trustFile),
-                    password.toCharArray());
-            tmf = TrustManagerFactory
-                    .getInstance(TrustManagerFactory.getDefaultAlgorithm());
-            tmf.init(trustStore);
-
-            ctx = SSLContext.getInstance("SSL");
-            ctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
-            return ctx.getServerSocketFactory();
-        } catch (KeyStoreException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (NoSuchAlgorithmException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (CertificateException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (FileNotFoundException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (UnrecoverableKeyException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (KeyManagementException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-        return null; //null if generation of SSLServerSocketFactory fails
-    }
-
     private void addLicense(String licenseString, LicenseV2 l) {
         clientLicenses.put(licenseString, l);
     }
