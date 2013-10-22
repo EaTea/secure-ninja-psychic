@@ -31,8 +31,8 @@ public class SWHV2 {
             String password) throws UnknownHostException, IOException {
         clientLicenses = new HashMap<String, LicenseV2>();
         libraries = new HashMap<String, File>();
-        sslservfact = (SSLServerSocketFactory) 
-                SecurityUtilitiesV2.getSSLServerSocketFactory(keyFile, trustFile, password);
+        sslservfact = (SSLServerSocketFactory) SecurityUtilitiesV2
+                .getSSLServerSocketFactory(keyFile, trustFile, password);
         serverConnection = (SSLServerSocket) sslservfact.createServerSocket(
                 serverPort, 0 /* impl. specific */,
                 InetAddress.getLocalHost());
@@ -40,7 +40,7 @@ public class SWHV2 {
                 + serverConnection.getInetAddress().getCanonicalHostName()
                 + ":" + serverConnection.getLocalPort());
     }
-    
+
     private void addLicense(String licenseString, LicenseV2 l) {
         clientLicenses.put(licenseString, l);
     }
@@ -128,7 +128,7 @@ public class SWHV2 {
     private void acceptLicenses(SSLSocket connection) {
         DataInputStream inStream = NetworkUtilities
                 .getDataInputStream(connection);
-        
+
         if (inStream != null) {
             System.out.println("Checking if license is legitimate");
             String license = null, developerID = null;
@@ -181,7 +181,7 @@ public class SWHV2 {
                 NetworkUtilities.closeSocketDataOutputStream(outStream,
                         connection);
             }
-            
+
             NetworkUtilities.closeSocketDataInputStream(inStream, connection);
         }
 
@@ -238,13 +238,13 @@ public class SWHV2 {
                         String s = libName + i + System.currentTimeMillis()
                                 + Math.random();
                         MessageDigest md = MessageDigest.getInstance("MD5");
-                        
+
                         // Note that s.getBytes() is not platform independent.
                         // Better approach would be to use character encodings.
                         String license = NetworkUtilities.bytesToHex(md
                                 .digest(s.getBytes()));
                         outStream.writeUTF(license);
-                        
+
                         addLicense(license,
                                 new LicenseV2(license,
                                         InetAddress.getLocalHost(), libName,

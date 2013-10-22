@@ -17,26 +17,27 @@ import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManagerFactory;
 
 public class SecurityUtilitiesV2 {
-    
+
     static SSLSocketFactory getSSLSocketFactory(
             String keyFile, String trustFile, String password) {
         try {
+            //generate keystore
             KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
             keyStore.load(new FileInputStream(keyFile), password.toCharArray());
-
-            KeyStore trustStore =
-                    KeyStore.getInstance(KeyStore.getDefaultType());
-            trustStore.load(
-                    new FileInputStream(trustFile), password.toCharArray());
-
             KeyManagerFactory kmf = KeyManagerFactory.getInstance(
                     KeyManagerFactory.getDefaultAlgorithm());
             kmf.init(keyStore, password.toCharArray());
 
+            //generate truststore
+            KeyStore trustStore =
+                    KeyStore.getInstance(KeyStore.getDefaultType());
+            trustStore.load(
+                    new FileInputStream(trustFile), password.toCharArray());
             TrustManagerFactory tmf = TrustManagerFactory
                     .getInstance(TrustManagerFactory.getDefaultAlgorithm());
             tmf.init(trustStore);
 
+            //generate sslcontext
             SSLContext ctx = SSLContext.getInstance("SSL");
             ctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
 
@@ -68,29 +69,27 @@ public class SecurityUtilitiesV2 {
 
     static SSLServerSocketFactory getSSLServerSocketFactory(String keyFile,
             String trustFile, String password) {
-        KeyStore keyStore;
-        KeyStore trustStore;
-        KeyManagerFactory kmf;
-        TrustManagerFactory tmf;
-        SSLContext ctx;
         try {
             //generate keystore
-            keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
+            KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
             keyStore.load(new FileInputStream(keyFile),
                     password.toCharArray());
-            kmf = KeyManagerFactory.getInstance(KeyManagerFactory
+            KeyManagerFactory kmf =
+                    KeyManagerFactory.getInstance(KeyManagerFactory
                     .getDefaultAlgorithm());
             kmf.init(keyStore, password.toCharArray());
 
             //generate trustStore
-            trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
+            KeyStore trustStore =
+                    KeyStore.getInstance(KeyStore.getDefaultType());
             trustStore.load(new FileInputStream(trustFile),
                     password.toCharArray());
-            tmf = TrustManagerFactory
+            TrustManagerFactory tmf = TrustManagerFactory
                     .getInstance(TrustManagerFactory.getDefaultAlgorithm());
             tmf.init(trustStore);
 
-            ctx = SSLContext.getInstance("SSL");
+            //generate sslcontext
+            SSLContext ctx = SSLContext.getInstance("SSL");
             ctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
             return ctx.getServerSocketFactory();
         } catch (KeyStoreException e) {
