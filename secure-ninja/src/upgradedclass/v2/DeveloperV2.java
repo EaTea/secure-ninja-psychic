@@ -3,10 +3,18 @@ package upgradedclass.v2;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.security.KeyManagementException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -14,8 +22,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Scanner;
+
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.SSLSocket;
+import javax.net.ssl.TrustManagerFactory;
 
 import snp.NetworkUtilities;
 
@@ -25,11 +37,61 @@ public class DeveloperV2 {
 
     private Map<String, Queue<LicenseV2>> licenseMap;
 
-    public DeveloperV2() throws UnknownHostException {
+    public DeveloperV2(String keyFile, String trustFile, String password)
+            throws UnknownHostException {
         System.out.println("Developer created at "
                 + InetAddress.getLocalHost().getCanonicalHostName());
         licenseMap = new HashMap<String, Queue<LicenseV2>>();
-        sslfact = (SSLSocketFactory) SSLSocketFactory.getDefault();
+        sslfact = (SSLSocketFactory)
+                getSSLSocketFactory(keyFile, trustFile, password);
+    }
+
+    private SSLSocketFactory getSSLSocketFactory(
+            String keyFile, String trustFile, String password) {
+        try {
+            KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
+            keyStore.load(new FileInputStream(keyFile), password.toCharArray());
+
+            KeyStore trustStore =
+                    KeyStore.getInstance(KeyStore.getDefaultType());
+            trustStore.load(
+                    new FileInputStream(trustFile), password.toCharArray());
+
+            KeyManagerFactory kmf = KeyManagerFactory.getInstance(
+                    KeyManagerFactory.getDefaultAlgorithm());
+            kmf.init(keyStore, password.toCharArray());
+
+            TrustManagerFactory tmf = TrustManagerFactory
+                    .getInstance(TrustManagerFactory.getDefaultAlgorithm());
+            tmf.init(trustStore);
+
+            SSLContext ctx = SSLContext.getInstance("SSL");
+            ctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
+
+            return ctx.getSocketFactory();
+        } catch (KeyStoreException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (NoSuchAlgorithmException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (FileNotFoundException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (CertificateException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (UnrecoverableKeyException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (KeyManagementException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        return null;
     }
 
     protected File linkFiles(List<File> classFiles, List<String> libNames,
@@ -345,8 +407,17 @@ public class DeveloperV2 {
 
     public static void main(String[] args) {
         DeveloperV2 dev = null;
+        System.out.println(
+        "Please Enter:\n"
+                + "\t <keyFilePath> <trustFilePath> <Password>");
+
         try {
-            dev = new DeveloperV2();
+            Scanner sc = new Scanner(System.in);
+            String keyFile = sc.next();
+            String trustFile  = sc.next();
+            String password = sc.next();
+            dev = new DeveloperV2(keyFile, trustFile, password);
+            sc.close();
         } catch (UnknownHostException e) {
             System.err.println("Error: host name could" + " not be resolved");
             e.printStackTrace();

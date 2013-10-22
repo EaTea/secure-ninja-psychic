@@ -3,37 +3,151 @@ package upgradedclass.v2;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.security.KeyManagementException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateException;
+import java.util.Scanner;
 import java.util.jar.Attributes;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
+
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLServerSocket;
+import javax.net.ssl.TrustManagerFactory;
 
-import snp.NetworkUtilities;
 
 public class LinkerV2 {
 
     private SSLServerSocketFactory sslServFact;
     private SSLServerSocket serverConnection;
     private SSLSocketFactory sslFact;
-    
-    public LinkerV2(int portNumber) throws UnknownHostException, IOException {
+
+    public LinkerV2(int portNumber, String keyFile, String trustFile,
+            String password) throws UnknownHostException, IOException {
         System.out.printf("Creating new LinkBroker at %s:%d\n",
                 InetAddress.getLocalHost().getCanonicalHostName(),
                 portNumber);
-        sslFact = (SSLSocketFactory) SSLSocketFactory.getDefault();
-        sslServFact = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
+        sslFact = (SSLSocketFactory)
+                getSSLSocketFactory(keyFile, trustFile, password);
+        sslServFact = (SSLServerSocketFactory)
+                getSSLServerSocketFactory(keyFile, trustFile, password);
         serverConnection = (SSLServerSocket) sslServFact.createServerSocket(
                 portNumber, 0, InetAddress.getLocalHost());
     }
-    
+
+    private SSLSocketFactory getSSLSocketFactory(
+            String keyFile, String trustFile, String password) {
+        try {
+            KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
+            keyStore.load(new FileInputStream(keyFile), password.toCharArray());
+
+            KeyStore trustStore =
+                    KeyStore.getInstance(KeyStore.getDefaultType());
+            trustStore.load(
+                    new FileInputStream(trustFile), password.toCharArray());
+
+            KeyManagerFactory kmf = KeyManagerFactory.getInstance(
+                    KeyManagerFactory.getDefaultAlgorithm());
+            kmf.init(keyStore, password.toCharArray());
+
+            TrustManagerFactory tmf = TrustManagerFactory
+                    .getInstance(TrustManagerFactory.getDefaultAlgorithm());
+            tmf.init(trustStore);
+
+            SSLContext ctx = SSLContext.getInstance("SSL");
+            ctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
+
+            return ctx.getSocketFactory();
+        } catch (KeyStoreException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (NoSuchAlgorithmException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (FileNotFoundException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (CertificateException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (UnrecoverableKeyException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (KeyManagementException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    private SSLServerSocketFactory getSSLServerSocketFactory(String keyFile,
+            String trustFile, String password) {
+        KeyStore keyStore;
+        KeyStore trustStore;
+        KeyManagerFactory kmf;
+        TrustManagerFactory tmf;
+        SSLContext ctx;
+        try {
+            //generate keystore
+            keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
+            keyStore.load(new FileInputStream(keyFile),
+                    password.toCharArray());
+            kmf = KeyManagerFactory.getInstance(KeyManagerFactory
+                    .getDefaultAlgorithm());
+            kmf.init(keyStore, password.toCharArray());
+
+            //generate trustStore
+            trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
+            trustStore.load(new FileInputStream(trustFile),
+                    password.toCharArray());
+            tmf = TrustManagerFactory
+                    .getInstance(TrustManagerFactory.getDefaultAlgorithm());
+            tmf.init(trustStore);
+
+            ctx = SSLContext.getInstance("SSL");
+            ctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
+            return ctx.getServerSocketFactory();
+        } catch (KeyStoreException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (NoSuchAlgorithmException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (CertificateException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (FileNotFoundException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (UnrecoverableKeyException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (KeyManagementException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        return null; //null if generation of SSLServerSocketFactory fails
+    }
+
     private void processRequests() {
         while (true) {
             SSLSocket s = null;
@@ -62,9 +176,9 @@ public class LinkerV2 {
      
     private void packageJarFile(SSLSocket connection) {
         DataInputStream inStream =
-            NetworkUtilities.getDataInputStream(connection);
+            NetworkUtilitiesV2.getDataInputStream(connection);
         DataOutputStream outStream =
-            NetworkUtilities.getDataOutputStream(connection);
+            NetworkUtilitiesV2.getDataOutputStream(connection);
         
         if (inStream != null && outStream != null) {
             JarOutputStream jarOut = null;
@@ -125,7 +239,7 @@ public class LinkerV2 {
                                         + swhIP + ":" + swhPort);
                                 swhCon = (SSLSocket) sslFact.createSocket(swhIP, swhPort);
                                 DataOutputStream swhOut =
-                                    NetworkUtilities.getDataOutputStream(swhCon);
+                                    NetworkUtilitiesV2.getDataOutputStream(swhCon);
                                 
                                 // tell SWH that request is for license verify
                                 swhOut.writeUTF("VER");
@@ -134,7 +248,7 @@ public class LinkerV2 {
                                 swhOut.writeUTF(
                                         connection.getInetAddress().getCanonicalHostName());
                                 
-                                if (NetworkUtilities.readFile(swhCon, jarOut, true)) {
+                                if (NetworkUtilitiesV2.readFile(swhCon, jarOut, true)) {
                                     System.out.println("Successfully read file");
                                     System.out.println("Notifying SWH and Dev");
                                     outStream.writeBoolean(true);
@@ -192,7 +306,7 @@ public class LinkerV2 {
                             count = 0;
                             
                             for (int i = 0; i < nFiles; i++) {
-                                if (NetworkUtilities.readFile(connection, jarOut, true)) {
+                                if (NetworkUtilitiesV2.readFile(connection, jarOut, true)) {
                                     count++;
                                 } else {
                                     System.out.println("Could not read files to JAR");
@@ -213,7 +327,7 @@ public class LinkerV2 {
                         
                         if (nFiles != -1 && count == nFiles) {
                             File jarFile = new File("temp.jar");
-                            if (NetworkUtilities.writeFile(connection, jarFile)) {
+                            if (NetworkUtilitiesV2.writeFile(connection, jarFile)) {
                                 System.out.println("Sent JAR file successfully");
                             } else {
                                 System.out.println("Could not send JAR file");
@@ -241,23 +355,29 @@ public class LinkerV2 {
                     System.out.println("Could not read number of licenses");
                 }
             }
-            NetworkUtilities.closeSocketDataInputStream(inStream, connection);
-            NetworkUtilities.closeSocketDataOutputStream(outStream, connection);
-            
+            NetworkUtilitiesV2.closeSocketDataInputStream(inStream, connection);
+            NetworkUtilitiesV2.closeSocketDataOutputStream(outStream, connection);
+
             System.out.println("<-----End Communication----->");
             System.out.println();
         }
     }
 
     public static void main(String[] args) {
-        if (args.length < 1) {
+       /* if (args.length < 1) {
             System.out.println("Usage: requires one integer parameter for port");
             return;
-        }
-        int portNumber = Integer.parseInt(args[0]);
+        }*/
+        System.out.println("Please Enter:\n"
+                + "\t<Port> <keyFilePath> <trustFilePath> <Password>");
+        Scanner sc = new Scanner(System.in);
+        int portNumber = sc.nextInt();
+        String keyFile = sc.next();
+        String trustFile = sc.next();
+        String password = sc.next();
         LinkerV2 link = null;
         try {
-            link = new LinkerV2(portNumber);
+            link = new LinkerV2(portNumber, keyFile, trustFile, password);
         } catch (UnknownHostException e) {
             System.err.println("Error: could not resolve hostname");
             e.printStackTrace();
@@ -269,5 +389,6 @@ public class LinkerV2 {
         if (link != null) {
             link.processRequests();
         }
+        sc.close();
     }
 }

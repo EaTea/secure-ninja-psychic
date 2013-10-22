@@ -3,17 +3,28 @@ package upgradedclass.v2;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.security.KeyManagementException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
+
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLSocket;
+import javax.net.ssl.TrustManagerFactory;
 
 import snp.NetworkUtilities;
 
@@ -21,21 +32,76 @@ public class SWHV2 {
 
     private Map<String, LicenseV2> clientLicenses;
 
+    private Map<String, File> libraries;
+
     private SSLServerSocketFactory sslservfact;
     
     private SSLServerSocket serverConnection;
     
-    public SWHV2(int serverPort) throws UnknownHostException, IOException {
+    public SWHV2(int serverPort, String keyFile, String trustFile,
+            String password) throws UnknownHostException, IOException {
         clientLicenses = new HashMap<String, LicenseV2>();
         libraries = new HashMap<String, File>();
-        sslservfact = (SSLServerSocketFactory)
-                SSLServerSocketFactory.getDefault();
+        sslservfact = (SSLServerSocketFactory) 
+                getSSLServerSocketFactory(keyFile, trustFile, password);
         serverConnection = (SSLServerSocket) sslservfact.createServerSocket(
                 serverPort, 0 /* impl. specific */,
                 InetAddress.getLocalHost());
         System.out.println("Created a new SoftwareHouse at "
                 + serverConnection.getInetAddress().getCanonicalHostName()
                 + ":" + serverConnection.getLocalPort());
+    }
+    
+    private SSLServerSocketFactory getSSLServerSocketFactory(String keyFile,
+            String trustFile, String password) {
+        KeyStore keyStore;
+        KeyStore trustStore;
+        KeyManagerFactory kmf;
+        TrustManagerFactory tmf;
+        SSLContext ctx;
+        try {
+            //generate keystore
+            keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
+            keyStore.load(new FileInputStream(keyFile),
+                    password.toCharArray());
+            kmf = KeyManagerFactory.getInstance(KeyManagerFactory
+                    .getDefaultAlgorithm());
+            kmf.init(keyStore, password.toCharArray());
+
+            //generate trustStore
+            trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
+            trustStore.load(new FileInputStream(trustFile),
+                    password.toCharArray());
+            tmf = TrustManagerFactory
+                    .getInstance(TrustManagerFactory.getDefaultAlgorithm());
+            tmf.init(trustStore);
+
+            ctx = SSLContext.getInstance("SSL");
+            ctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
+            return ctx.getServerSocketFactory();
+        } catch (KeyStoreException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (NoSuchAlgorithmException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (CertificateException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (FileNotFoundException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (UnrecoverableKeyException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (KeyManagementException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        return null; //null if generation of SSLServerSocketFactory fails
     }
 
     private void addLicense(String licenseString, LicenseV2 l) {
@@ -64,8 +130,6 @@ public class SWHV2 {
         }
         return false;
     }
-
-    private Map<String, File> libraries;
 
     private void addLibraryFile(String libName, File f) {
         libraries.put(libName, f);
@@ -284,13 +348,23 @@ public class SWHV2 {
 
     public static void main(String[] args) {
         SWHV2 swh = null;
-        if (args.length < 1) {
-            System.out.println("Usage: requires one integer parameter for port");
+        System.out.println(
+        "Please Enter:\n"
+                + "\t<Port> <keyFilePath> <trustFilePath> <Password>");
+       /* if (args.length < 4) {
+            System.out.println("Usage:\n"
+                    + "requires one integer parameter for port\n");
             return;
-        }
-        int portNumber = Integer.parseInt(args[0]);
+        }*/
+        Scanner sc = new Scanner(System.in);
+        int portNumber = sc.nextInt();
+        String keyFile = sc.next();
+        String trustFile = sc.next();
+        String password = sc.next();
         try {
-            swh = new SWHV2(portNumber);
+            //TODO
+            swh = new SWHV2(portNumber, keyFile, trustFile, password);
+            sc.close();
         } catch (UnknownHostException e) {
             System.err.println("Error: host name could"
                     + " not be resolved; exiting");
@@ -301,7 +375,7 @@ public class SWHV2 {
             e.printStackTrace();
         }
         if (swh != null) {
-            Scanner sc = new Scanner(System.in);
+            //Scanner sc = new Scanner(System.in);
             System.out.println("How many files is this SoftwareHouse"
                     + "responsible for?");
             int nFiles = sc.nextInt();
@@ -319,6 +393,7 @@ public class SWHV2 {
 
             swh.listenForCommands();
         }
+        sc.close();
     }
 
 }
