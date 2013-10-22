@@ -197,14 +197,7 @@ public class DeveloperV2 {
                 for (int i = 0; i < nLicReturned; i++) {
                     String license = inStream.readUTF();
                     addLicense(libraryName, new LicenseV2(license, connection.getInetAddress(),
-                            libraryName, InetAddress.getLocalHost().getCanonicalHostName(), 1 /*
-                                                                                               * how
-                                                                                               * many
-                                                                                               * uses
-                                                                                               * a
-                                                                                               * license
-                                                                                               * has
-                                                                                               */,
+                            libraryName, InetAddress.getLocalHost().getCanonicalHostName(), 1,
                             connection.getPort()));
                 }
 
@@ -233,6 +226,11 @@ public class DeveloperV2 {
         licenseMap.get(library).add(l);
     }
 
+    private String wrapLicense(String license) {
+        // TODO: encrypt a license with a SWH public key using asymmetric key encryption
+        return null;
+    }
+    
     private LicenseV2 getLicense(String library) {
         if (licenseMap.containsKey(library) && !licenseMap.get(library).isEmpty()) {
             return licenseMap.get(library).peek();
