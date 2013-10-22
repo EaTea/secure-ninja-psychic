@@ -262,21 +262,27 @@ public class SWHV2 {
     }
 
     public static void main(String[] args) {
+        if (args.length != 3) {
+            System.err.println("Usage: needs 3 arguments.");
+            System.err.println("\tArgument 1 = port number");
+            System.err.println("\tArgument 2 = keystore filepath");
+            System.err.println("\tArgument 3 = keystore password");
+            System.exit(1);
+        }
+        
         SWHV2 swh = null;
-        System.out.println("Please Enter:\n" + "\t<Port> <keyFilePath> <Password>");
+//        System.out.println("Please Enter:\n" + "\t<Port> <keyFilePath> <Password>");
         /*
          * if (args.length < 4) { System.out.println("Usage:\n" +
          * "requires one integer parameter for port\n"); return; }
          */
-        Scanner sc = new Scanner(System.in);
-        int portNumber = sc.nextInt();
-        String keyFile = sc.next();
+        int portNumber = Integer.parseInt(args[0]);
+        String keyFile = args[1];
         // String trustFile = sc.next();
-        String password = sc.next();
+        String password = args[2];
         try {
             // TODO
             swh = new SWHV2(portNumber, keyFile, password);
-            sc.close();
         } catch (UnknownHostException e) {
             System.err.println("Error: host name could" + " not be resolved; exiting");
             e.printStackTrace();
@@ -286,7 +292,7 @@ public class SWHV2 {
             e.printStackTrace();
         }
         if (swh != null) {
-            // Scanner sc = new Scanner(System.in);
+            Scanner sc = new Scanner(System.in);
             System.out.println("How many files is this SoftwareHouse" + "responsible for?");
             int nFiles = sc.nextInt();
 
@@ -299,10 +305,10 @@ public class SWHV2 {
                 File f = new File(libPath);
                 swh.addLibraryFile(libName, f);
             }
-
+            sc.close();
             swh.listenForCommands();
         }
-        sc.close();
+
     }
 
 }

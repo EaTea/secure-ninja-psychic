@@ -34,24 +34,8 @@ public class DeveloperV2 {
         sslfact = (SSLSocketFactory) SecurityUtilitiesV2.getSSLSocketFactory(trustFile, password);
     }
 
-    protected File linkFiles(List<File> classFiles, List<String> libNames, final String jarName,
+    protected File linkFiles(List<File> classFiles, List<LicenseV2> requestedLicenses, final String jarName,
             SSLSocket connection) {
-
-        // FIXME: Change to external method and perform before connection is
-        // opened
-        System.out.println("Checking licenses");
-        List<LicenseV2> requestedLicenses = new ArrayList<LicenseV2>();
-
-        for (String lib : libNames) {
-            if (!hasLicense(lib)) {
-                System.out.println("Missing license for " + lib);
-                System.out.println("Unsuccessful return from linking");
-                return null;
-            } else {
-                System.out.println("Found a license for " + lib);
-                requestedLicenses.add(getLicense(lib));
-            }
-        }
 
         DataInputStream inStream = NetworkUtilities.getDataInputStream(connection);
         DataOutputStream outStream = NetworkUtilities.getDataOutputStream(connection);
@@ -143,13 +127,7 @@ public class DeveloperV2 {
                         System.out.println("Receiving JAR file from" + " LinkBroker");
                         try {
                             FileOutputStream target = new FileOutputStream(jarName + ".jar");
-                            if (NetworkUtilities.readFile(connection, target, false /*
-                                                                                     * not
-                                                                                     * reading
-                                                                                     * classFiles
-                                                                                     * to
-                                                                                     * JAR
-                                                                                     */)) {
+                            if (NetworkUtilities.readFile(connection, target, false)) {
                                 System.out.println("Successfully received" + " JAR file");
                                 jarFile = new File(jarName + ".jar");
                             } else {
@@ -176,6 +154,24 @@ public class DeveloperV2 {
         return jarFile;
     }
 
+    private List<LicenseV2> getLicenses(List<String> libNames) {
+        System.out.println("Checking licenses");
+        List<LicenseV2> requestedLicenses = new ArrayList<LicenseV2>();
+
+        for (String lib : libNames) {
+            if (!hasLicense(lib)) {
+                System.out.println("Missing license for " + lib);
+                System.out.println("Unsuccessful return from linking");
+                return null;
+            } else {
+                System.out.println("Found a license for " + lib);
+                requestedLicenses.add(getLicense(lib));
+            }
+        }
+        return requestedLicenses;
+    }
+
+    
     protected void requestLicense(int numLicense, String libraryName, SSLSocket connection) {
         DataInputStream inStream = NetworkUtilities.getDataInputStream(connection);
         DataOutputStream outStream = NetworkUtilities.getDataOutputStream(connection);
@@ -254,8 +250,8 @@ public class DeveloperV2 {
         return getLicense(library) != null;
     }
 
-    private void processCommands() {
-        Scanner sc = new Scanner(System.in);
+    private void processCommands(Scanner sc) {
+//        Scanner sc = new Scanner(System.in);
         do {
             System.out.println("Commands:\n" + "\tRequest <Hostname> <Port> <LibraryName>"
                     + " <NumberLicenses>" + "\n\tOR\n" + "\tLink <Hostname> <Port> <JARFileName>"
@@ -270,6 +266,7 @@ public class DeveloperV2 {
 
                 try {
                     SSLSocket connection = (SSLSocket) sslfact.createSocket(remoteHost, remotePort);
+                    System.out.println(connection.getSession().getCipherSuite());
                     requestLicense(numLicenses, libName, connection);
                     connection.close();
                 } catch (UnknownHostException e) {
@@ -292,10 +289,20 @@ public class DeveloperV2 {
                 for (int i = 0; i < nLibs; i++) {
                     libNames.add(sc.next());
                 }
+                
+                List<LicenseV2> requestedLicenses = getLicenses(libNames);
+                if (requestedLicenses == null) {
+                    System.out.println("Sorry, you are missing a license for one or more " +
+                    		"requested libraries and cannot link");
+                    continue;
+                }
 
-                // FIXME: Should check for 0 files
                 System.out.println("How many files to link?");
                 int nFiles = sc.nextInt();
+                if (nFiles == 0) {
+                    System.out.println("Sorry, you need at least 1 file to provide for linking");
+                    continue;
+                }
                 System.out.printf("Please input %d class file paths\n", nFiles);
                 System.out.println("Note: 1st class file treated as main");
                 List<File> classFiles = new ArrayList<File>();
@@ -305,7 +312,7 @@ public class DeveloperV2 {
 
                 try {
                     SSLSocket connection = (SSLSocket) sslfact.createSocket(remoteHost, remotePort);
-                    linkFiles(classFiles, libNames, jarFileName, connection);
+                    linkFiles(classFiles, requestedLicenses, jarFileName, connection);
                     connection.close();
                 } catch (UnknownHostException e) {
                     System.err.println("Error: host name could" + " not be resolved");
@@ -321,28 +328,36 @@ public class DeveloperV2 {
                 System.out.println("Sorry, that was not a recognised command.");
             }
         } while (true);
-        sc.close();
     }
 
     public static void main(String[] args) {
+        if (args.length != 2) {
+            System.err.println("Usage: needs two arguments.");
+            System.err.println("\tArgument 1 = truststore filepath");
+            System.err.println("\tArgument 2 = truststore password");
+            System.exit(1);
+        }
+        
         DeveloperV2 dev = null;
         //System.out.println("Please Enter:\n" + "\t <keyFilePath> <trustFilePath> <Password>");
-        System.out.println("Please Enter:\n" + "\t <trustFilePath> <password>");
-
+//        System.out.println("Please Enter:\n" + "\t <trustFilePath> <password>");
+        Scanner sc = null;
         try {
-            Scanner sc = new Scanner(System.in);
-            //String keyFile = sc.next();
-            String trustFile = sc.next();
-            String password = sc.next();
+            sc = new Scanner(System.in);
+//            String keyFile = sc.next();
+            String trustFile = args[0];
+            String password = args[1];
+//            String trustFile = "../keystores/dev-truststore.jks";
+//            String password = "cits3231";
             dev = new DeveloperV2(trustFile, password);
-            sc.close();
         } catch (UnknownHostException e) {
             System.err.println("Error: host name could" + " not be resolved");
             e.printStackTrace();
         }
-        if (dev != null) {
-            dev.processCommands();
+        if (dev != null && sc != null) {
+            dev.processCommands(sc);
         }
+        sc.close();
     }
 
 }

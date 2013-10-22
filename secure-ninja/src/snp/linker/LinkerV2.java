@@ -29,13 +29,13 @@ public class LinkerV2 {
 
     private SSLSocketFactory sslFact;
 
-    public LinkerV2(int portNumber, String keyFile, String trustFile, String password)
+    public LinkerV2(int portNumber, String keyFile, String keyStorePW, String trustFile, String trustStorePW)
             throws UnknownHostException, IOException {
         System.out.printf("Creating new LinkBroker at %s:%d\n", InetAddress.getLocalHost()
                 .getCanonicalHostName(), portNumber);
-        sslFact = (SSLSocketFactory) SecurityUtilitiesV2.getSSLSocketFactory(trustFile, password);
+        sslFact = (SSLSocketFactory) SecurityUtilitiesV2.getSSLSocketFactory(trustFile, trustStorePW);
         sslServFact = (SSLServerSocketFactory) SecurityUtilitiesV2.getSSLServerSocketFactory(
-                keyFile, password);
+                keyFile, keyStorePW);
         serverConnection = (SSLServerSocket) sslServFact.createServerSocket(portNumber, 0,
                 InetAddress.getLocalHost());
     }
@@ -248,21 +248,31 @@ public class LinkerV2 {
     }
 
     public static void main(String[] args) {
+        if (args.length != 5) {
+            System.err.println("Usage: needs 5 arguments.");
+            System.err.println("\tArgument 1 = port number");
+            System.err.println("\tArgument 2 = keystore filepath");
+            System.err.println("\tArgument 3 = keystore password");
+            System.err.println("\tArgument 4 = truststore filepath");
+            System.err.println("\tArgument 5 = truststore password");
+            System.exit(1);
+        }
         /*
          * if (args.length < 1) {
          * System.out.println("Usage: requires one integer parameter for port");
          * return; }
          */
-        System.out.println("Please Enter:\n"
-                + "\t<Port> <keyFilePath> <keyStorePassword> <trustFilePath> <trustStorePassword>");
+//        System.out.println("Please Enter:\n"
+//                + "\t<Port> <keyFilePath> <keyStorePassword> <trustFilePath> <trustStorePassword>");
         Scanner sc = new Scanner(System.in);
-        int portNumber = sc.nextInt();
-        String keyFile = sc.next();
-        String trustFile = sc.next();
-        String password = sc.next();
+        int portNumber = Integer.parseInt(args[0]);
+        String keyFile = args[1];
+        String keyStorePW = args[2];
+        String trustFile = args[3];
+        String trustStorePW = args[4];
         LinkerV2 link = null;
         try {
-            link = new LinkerV2(portNumber, keyFile, trustFile, password);
+            link = new LinkerV2(portNumber, keyFile, keyStorePW, trustFile, trustStorePW);
         } catch (UnknownHostException e) {
             System.err.println("Error: could not resolve hostname");
             e.printStackTrace();
