@@ -7,6 +7,7 @@ import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 
@@ -18,15 +19,17 @@ import javax.net.ssl.TrustManagerFactory;
 
 public class SecurityUtilitiesV2 {
 
-    public static SSLSocketFactory getSSLSocketFactory(String keyFile, String trustFile,
-            String password) {
+    public static SSLSocketFactory getSSLSocketFactory(String trustFile, String password) {
         try {
             // generate keystore
-            KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
-            keyStore.load(new FileInputStream(keyFile), password.toCharArray());
-            KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory
-                    .getDefaultAlgorithm());
-            kmf.init(keyStore, password.toCharArray());
+            // KeyStore keyStore =
+            // KeyStore.getInstance(KeyStore.getDefaultType());
+            // keyStore.load(new FileInputStream(keyFile),
+            // password.toCharArray());
+            // KeyManagerFactory kmf =
+            // KeyManagerFactory.getInstance(KeyManagerFactory
+            // .getDefaultAlgorithm());
+            // kmf.init(keyStore, password.toCharArray());
 
             // generate truststore
             KeyStore trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
@@ -37,7 +40,7 @@ public class SecurityUtilitiesV2 {
 
             // generate sslcontext
             SSLContext ctx = SSLContext.getInstance("SSL");
-            ctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
+            ctx.init(null, tmf.getTrustManagers(), SecureRandom.getInstance("SHA1PRNG"));
 
             return ctx.getSocketFactory();
         } catch (KeyStoreException e) {
@@ -55,9 +58,6 @@ public class SecurityUtilitiesV2 {
         } catch (CertificateException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
-        } catch (UnrecoverableKeyException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
         } catch (KeyManagementException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
@@ -65,8 +65,7 @@ public class SecurityUtilitiesV2 {
         return null;
     }
 
-    public static SSLServerSocketFactory getSSLServerSocketFactory(String keyFile,
-            String trustFile, String password) {
+    public static SSLServerSocketFactory getSSLServerSocketFactory(String keyFile, String password) {
         try {
             // generate keystore
             KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
@@ -75,16 +74,16 @@ public class SecurityUtilitiesV2 {
                     .getDefaultAlgorithm());
             kmf.init(keyStore, password.toCharArray());
 
-            // generate trustStore
-            KeyStore trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
-            trustStore.load(new FileInputStream(trustFile), password.toCharArray());
-            TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory
-                    .getDefaultAlgorithm());
-            tmf.init(trustStore);
+//            // generate trustStore
+//            KeyStore trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
+//            trustStore.load(new FileInputStream(trustFile), password.toCharArray());
+//            TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory
+//                    .getDefaultAlgorithm());
+//            tmf.init(trustStore);
 
             // generate sslcontext
             SSLContext ctx = SSLContext.getInstance("SSL");
-            ctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
+            ctx.init(kmf.getKeyManagers(), null, SecureRandom.getInstance("SHA1PRNG"));
             return ctx.getServerSocketFactory();
         } catch (KeyStoreException e) {
             // TODO Auto-generated catch block

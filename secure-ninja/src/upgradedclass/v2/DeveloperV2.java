@@ -25,13 +25,11 @@ public class DeveloperV2 {
 
     private Map<String, Queue<LicenseV2>> licenseMap;
 
-    public DeveloperV2(String keyFile, String trustFile, String password)
-            throws UnknownHostException {
+    public DeveloperV2(String trustFile, String password) throws UnknownHostException {
         System.out.println("Developer created at "
                 + InetAddress.getLocalHost().getCanonicalHostName());
         licenseMap = new HashMap<String, Queue<LicenseV2>>();
-        sslfact = (SSLSocketFactory) SecurityUtilitiesV2.getSSLSocketFactory(keyFile, trustFile,
-                password);
+        sslfact = (SSLSocketFactory) SecurityUtilitiesV2.getSSLSocketFactory(trustFile, password);
     }
 
     protected File linkFiles(List<File> classFiles, List<String> libNames, final String jarName,
@@ -326,14 +324,15 @@ public class DeveloperV2 {
 
     public static void main(String[] args) {
         DeveloperV2 dev = null;
-        System.out.println("Please Enter:\n" + "\t <keyFilePath> <trustFilePath> <Password>");
+        //System.out.println("Please Enter:\n" + "\t <keyFilePath> <trustFilePath> <Password>");
+        System.out.println("Please Enter:\n" + "\t <trustFilePath> <password>");
 
         try {
             Scanner sc = new Scanner(System.in);
-            String keyFile = sc.next();
+            //String keyFile = sc.next();
             String trustFile = sc.next();
             String password = sc.next();
-            dev = new DeveloperV2(keyFile, trustFile, password);
+            dev = new DeveloperV2(trustFile, password);
             sc.close();
         } catch (UnknownHostException e) {
             System.err.println("Error: host name could" + " not be resolved");

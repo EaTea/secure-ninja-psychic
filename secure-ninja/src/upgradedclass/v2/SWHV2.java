@@ -27,12 +27,12 @@ public class SWHV2 {
 
     private SSLServerSocket serverConnection;
 
-    public SWHV2(int serverPort, String keyFile, String trustFile, String password)
-            throws UnknownHostException, IOException {
+    public SWHV2(int serverPort, String keyFile, String password) throws UnknownHostException,
+            IOException {
         clientLicenses = new HashMap<String, LicenseV2>();
         libraries = new HashMap<String, File>();
         sslservfact = (SSLServerSocketFactory) SecurityUtilitiesV2.getSSLServerSocketFactory(
-                keyFile, trustFile, password);
+                keyFile, password);
         serverConnection = (SSLServerSocket) sslservfact.createServerSocket(serverPort, 0 /*
                                                                                            * impl
                                                                                            * .
@@ -262,7 +262,7 @@ public class SWHV2 {
 
     public static void main(String[] args) {
         SWHV2 swh = null;
-        System.out.println("Please Enter:\n" + "\t<Port> <keyFilePath> <trustFilePath> <Password>");
+        System.out.println("Please Enter:\n" + "\t<Port> <keyFilePath> <Password>");
         /*
          * if (args.length < 4) { System.out.println("Usage:\n" +
          * "requires one integer parameter for port\n"); return; }
@@ -270,11 +270,11 @@ public class SWHV2 {
         Scanner sc = new Scanner(System.in);
         int portNumber = sc.nextInt();
         String keyFile = sc.next();
-        String trustFile = sc.next();
+        // String trustFile = sc.next();
         String password = sc.next();
         try {
             // TODO
-            swh = new SWHV2(portNumber, keyFile, trustFile, password);
+            swh = new SWHV2(portNumber, keyFile, password);
             sc.close();
         } catch (UnknownHostException e) {
             System.err.println("Error: host name could" + " not be resolved; exiting");

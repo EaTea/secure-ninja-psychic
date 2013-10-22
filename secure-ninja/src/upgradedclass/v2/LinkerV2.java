@@ -30,10 +30,9 @@ public class LinkerV2 {
             throws UnknownHostException, IOException {
         System.out.printf("Creating new LinkBroker at %s:%d\n", InetAddress.getLocalHost()
                 .getCanonicalHostName(), portNumber);
-        sslFact = (SSLSocketFactory) SecurityUtilitiesV2.getSSLSocketFactory(keyFile, trustFile,
-                password);
+        sslFact = (SSLSocketFactory) SecurityUtilitiesV2.getSSLSocketFactory(trustFile, password);
         sslServFact = (SSLServerSocketFactory) SecurityUtilitiesV2.getSSLServerSocketFactory(
-                keyFile, trustFile, password);
+                keyFile, password);
         serverConnection = (SSLServerSocket) sslServFact.createServerSocket(portNumber, 0,
                 InetAddress.getLocalHost());
     }
@@ -251,7 +250,8 @@ public class LinkerV2 {
          * System.out.println("Usage: requires one integer parameter for port");
          * return; }
          */
-        System.out.println("Please Enter:\n" + "\t<Port> <keyFilePath> <trustFilePath> <Password>");
+        System.out.println("Please Enter:\n"
+                + "\t<Port> <keyFilePath> <keyStorePassword> <trustFilePath> <trustStorePassword>");
         Scanner sc = new Scanner(System.in);
         int portNumber = sc.nextInt();
         String keyFile = sc.next();
