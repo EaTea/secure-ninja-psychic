@@ -18,8 +18,7 @@ public class NetworkUtilitiesV2 {
         DataInputStream inStream = null;
         try {
             System.out.println("Opening input stream from: "
-                    + connection.getInetAddress().getHostName() + ":"
-                    + connection.getPort());
+                    + connection.getInetAddress().getHostName() + ":" + connection.getPort());
             inStream = new DataInputStream(connection.getInputStream());
         } catch (IOException e) {
             System.err.println("Error: could not open I/O socket stream");
@@ -32,8 +31,7 @@ public class NetworkUtilitiesV2 {
         DataOutputStream outStream = null;
         try {
             System.out.println("Opening output stream to: "
-                    + connection.getInetAddress().getHostName() + ":"
-                    + connection.getPort());
+                    + connection.getInetAddress().getHostName() + ":" + connection.getPort());
             outStream = new DataOutputStream(connection.getOutputStream());
         } catch (IOException e) {
             System.err.println("Error: could not open I/O socket stream");
@@ -42,12 +40,10 @@ public class NetworkUtilitiesV2 {
         return outStream;
     }
 
-    public static void closeSocketDataInputStream(DataInputStream inStream,
-            SSLSocket connection) {
+    public static void closeSocketDataInputStream(DataInputStream inStream, SSLSocket connection) {
         try {
             System.out.println("Closing input stream from: "
-                    + connection.getInetAddress().getHostName() + ":"
-                    + connection.getPort());
+                    + connection.getInetAddress().getHostName() + ":" + connection.getPort());
             inStream.close();
         } catch (IOException e) {
             System.err.println("Error: could not close I/O socket stream");
@@ -56,12 +52,10 @@ public class NetworkUtilitiesV2 {
         }
     }
 
-    public static void closeSocketDataOutputStream(DataOutputStream outStream,
-            SSLSocket connection) {
+    public static void closeSocketDataOutputStream(DataOutputStream outStream, SSLSocket connection) {
         try {
             System.out.println("Closing output stream to: "
-                    + connection.getInetAddress().getHostName() + ":"
-                    + connection.getPort());
+                    + connection.getInetAddress().getHostName() + ":" + connection.getPort());
             outStream.close();
         } catch (IOException e) {
             System.err.println("Error: could not close I/O socket stream");
@@ -70,8 +64,7 @@ public class NetworkUtilitiesV2 {
         }
     }
 
-    public static boolean readFile(SSLSocket connection, OutputStream target,
-            boolean isWritingJAR) {
+    public static boolean readFile(SSLSocket connection, OutputStream target, boolean isWritingJAR) {
         DataInputStream inStream = getDataInputStream(connection);
         boolean success = true;
 
@@ -84,8 +77,8 @@ public class NetworkUtilitiesV2 {
                 System.out.println("File path: " + filePath);
 
                 if (isWritingJAR) {
-                	// FIXME: filePath separators may need to change
-                	// e.g. ("/" -> "\")
+                    // FIXME: filePath separators may need to change
+                    // e.g. ("/" -> "\")
                     System.out.println("Constructing a JAR file");
                     JarOutputStream jarTarget = (JarOutputStream) target;
                     jarTarget.putNextEntry(new JarEntry(filePath));

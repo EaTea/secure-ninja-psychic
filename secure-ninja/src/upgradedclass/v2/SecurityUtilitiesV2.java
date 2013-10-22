@@ -18,26 +18,24 @@ import javax.net.ssl.TrustManagerFactory;
 
 public class SecurityUtilitiesV2 {
 
-    static SSLSocketFactory getSSLSocketFactory(
-            String keyFile, String trustFile, String password) {
+    public static SSLSocketFactory getSSLSocketFactory(String keyFile, String trustFile,
+            String password) {
         try {
-            //generate keystore
+            // generate keystore
             KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
             keyStore.load(new FileInputStream(keyFile), password.toCharArray());
-            KeyManagerFactory kmf = KeyManagerFactory.getInstance(
-                    KeyManagerFactory.getDefaultAlgorithm());
+            KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory
+                    .getDefaultAlgorithm());
             kmf.init(keyStore, password.toCharArray());
 
-            //generate truststore
-            KeyStore trustStore =
-                    KeyStore.getInstance(KeyStore.getDefaultType());
-            trustStore.load(
-                    new FileInputStream(trustFile), password.toCharArray());
-            TrustManagerFactory tmf = TrustManagerFactory
-                    .getInstance(TrustManagerFactory.getDefaultAlgorithm());
+            // generate truststore
+            KeyStore trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
+            trustStore.load(new FileInputStream(trustFile), password.toCharArray());
+            TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory
+                    .getDefaultAlgorithm());
             tmf.init(trustStore);
 
-            //generate sslcontext
+            // generate sslcontext
             SSLContext ctx = SSLContext.getInstance("SSL");
             ctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
 
@@ -67,28 +65,24 @@ public class SecurityUtilitiesV2 {
         return null;
     }
 
-    static SSLServerSocketFactory getSSLServerSocketFactory(String keyFile,
+    public static SSLServerSocketFactory getSSLServerSocketFactory(String keyFile,
             String trustFile, String password) {
         try {
-            //generate keystore
+            // generate keystore
             KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
-            keyStore.load(new FileInputStream(keyFile),
-                    password.toCharArray());
-            KeyManagerFactory kmf =
-                    KeyManagerFactory.getInstance(KeyManagerFactory
+            keyStore.load(new FileInputStream(keyFile), password.toCharArray());
+            KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory
                     .getDefaultAlgorithm());
             kmf.init(keyStore, password.toCharArray());
 
-            //generate trustStore
-            KeyStore trustStore =
-                    KeyStore.getInstance(KeyStore.getDefaultType());
-            trustStore.load(new FileInputStream(trustFile),
-                    password.toCharArray());
-            TrustManagerFactory tmf = TrustManagerFactory
-                    .getInstance(TrustManagerFactory.getDefaultAlgorithm());
+            // generate trustStore
+            KeyStore trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
+            trustStore.load(new FileInputStream(trustFile), password.toCharArray());
+            TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory
+                    .getDefaultAlgorithm());
             tmf.init(trustStore);
 
-            //generate sslcontext
+            // generate sslcontext
             SSLContext ctx = SSLContext.getInstance("SSL");
             ctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
             return ctx.getServerSocketFactory();
@@ -114,7 +108,7 @@ public class SecurityUtilitiesV2 {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-        return null; //null if generation of SSLServerSocketFactory fails
+        return null; // null if generation of SSLServerSocketFactory fails
     }
 
 }

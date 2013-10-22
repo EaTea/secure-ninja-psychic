@@ -7,7 +7,7 @@ import java.net.InetAddress;
 
 /**
  * @author wying1211
- *
+ * 
  */
 public class LicenseV2 {
     /**
@@ -30,16 +30,17 @@ public class LicenseV2 {
      * 
      */
     private int numberLicenses;
-    
+
     private int port;
-    
+
     private void setPort(int port) {
         this.port = port;
     }
-    
+
     public int getPort() {
         return port;
     }
+
     /**
      * 
      * @param license
@@ -47,8 +48,8 @@ public class LicenseV2 {
      * @param name
      * @param developerIP
      */
-    public LicenseV2(String license, InetAddress swhIP, String name,
-            String developerID, int licenses, int port) {
+    public LicenseV2(String license, InetAddress swhIP, String name, String developerID,
+            int licenses, int port) {
         this.licenseString = license;
         this.softwareHouseIP = swhIP;
         this.libraryName = name;
@@ -56,6 +57,7 @@ public class LicenseV2 {
         this.numberLicenses = licenses;
         this.port = port;
     }
+
     /**
      * 
      * @return
@@ -63,7 +65,7 @@ public class LicenseV2 {
     public String getLicenseString() {
         return licenseString;
     }
-    
+
     /**
      * 
      * @param licenseString
@@ -71,7 +73,7 @@ public class LicenseV2 {
     private void setLicenseString(String licenseString) {
         this.licenseString = licenseString;
     }
-    
+
     /**
      * 
      * @return
@@ -79,7 +81,7 @@ public class LicenseV2 {
     public InetAddress getSoftwareHouseIP() {
         return softwareHouseIP;
     }
-    
+
     /**
      * 
      * @param softwareHouseIP
@@ -87,7 +89,7 @@ public class LicenseV2 {
     private void setSoftwareHouseIP(InetAddress softwareHouseIP) {
         this.softwareHouseIP = softwareHouseIP;
     }
-    
+
     /**
      * 
      * @return
@@ -95,7 +97,7 @@ public class LicenseV2 {
     public String getLibraryName() {
         return libraryName;
     }
-    
+
     /**
      * 
      * @param libraryName
@@ -115,11 +117,11 @@ public class LicenseV2 {
     public int getNumberLicenses() {
         return numberLicenses;
     }
-    
+
     public void setNumberLicenses(int numLicense) {
         this.numberLicenses = numLicense;
     }
-    
+
     public void decrementNumberLicenses() {
         numberLicenses--;
     }

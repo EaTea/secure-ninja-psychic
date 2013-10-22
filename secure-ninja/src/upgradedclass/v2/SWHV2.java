@@ -24,21 +24,24 @@ public class SWHV2 {
     private Map<String, File> libraries;
 
     private SSLServerSocketFactory sslservfact;
-    
+
     private SSLServerSocket serverConnection;
-    
-    public SWHV2(int serverPort, String keyFile, String trustFile,
-            String password) throws UnknownHostException, IOException {
+
+    public SWHV2(int serverPort, String keyFile, String trustFile, String password)
+            throws UnknownHostException, IOException {
         clientLicenses = new HashMap<String, LicenseV2>();
         libraries = new HashMap<String, File>();
-        sslservfact = (SSLServerSocketFactory) SecurityUtilitiesV2
-                .getSSLServerSocketFactory(keyFile, trustFile, password);
-        serverConnection = (SSLServerSocket) sslservfact.createServerSocket(
-                serverPort, 0 /* impl. specific */,
+        sslservfact = (SSLServerSocketFactory) SecurityUtilitiesV2.getSSLServerSocketFactory(
+                keyFile, trustFile, password);
+        serverConnection = (SSLServerSocket) sslservfact.createServerSocket(serverPort, 0 /*
+                                                                                           * impl
+                                                                                           * .
+                                                                                           * specific
+                                                                                           */,
                 InetAddress.getLocalHost());
         System.out.println("Created a new SoftwareHouse at "
-                + serverConnection.getInetAddress().getCanonicalHostName()
-                + ":" + serverConnection.getLocalPort());
+                + serverConnection.getInetAddress().getCanonicalHostName() + ":"
+                + serverConnection.getLocalPort());
     }
 
     private void addLicense(String licenseString, LicenseV2 l) {
@@ -72,7 +75,6 @@ public class SWHV2 {
         libraries.put(libName, f);
     }
 
-
     private void listenForCommands() {
         SSLSocket connection = null;
         System.out.println();
@@ -80,25 +82,22 @@ public class SWHV2 {
             try {
                 connection = (SSLSocket) serverConnection.accept();
             } catch (IOException e) {
-                System.err.println("Error: IO error whilst"
-                        + " accepting connection");
+                System.err.println("Error: IO error whilst" + " accepting connection");
                 e.printStackTrace();
             }
 
             if (connection != null) {
                 System.out.println("Accepting connection from "
-                        + connection.getInetAddress().getCanonicalHostName()
-                        + ":" + connection.getPort());
-                DataInputStream inStream = NetworkUtilities
-                        .getDataInputStream(connection);
+                        + connection.getInetAddress().getCanonicalHostName() + ":"
+                        + connection.getPort());
+                DataInputStream inStream = NetworkUtilities.getDataInputStream(connection);
 
                 if (inStream != null) {
                     String command = null;
                     try {
                         command = inStream.readUTF();
                     } catch (IOException e) {
-                        System.err.println("Error: could read command "
-                                + "from stream");
+                        System.err.println("Error: could read command " + "from stream");
                         e.printStackTrace();
                     }
 
@@ -114,20 +113,18 @@ public class SWHV2 {
 
             try {
                 System.out.println("Closing connection to "
-                        + connection.getInetAddress().getCanonicalHostName()
-                        + ":" + connection.getPort());
+                        + connection.getInetAddress().getCanonicalHostName() + ":"
+                        + connection.getPort());
                 connection.close();
             } catch (IOException e) {
-                System.err.println("Error: IO error whilst"
-                        + " closing connection");
+                System.err.println("Error: IO error whilst" + " closing connection");
                 e.printStackTrace();
             }
         } while (true);
     }
 
     private void acceptLicenses(SSLSocket connection) {
-        DataInputStream inStream = NetworkUtilities
-                .getDataInputStream(connection);
+        DataInputStream inStream = NetworkUtilities.getDataInputStream(connection);
 
         if (inStream != null) {
             System.out.println("Checking if license is legitimate");
@@ -145,31 +142,25 @@ public class SWHV2 {
             if (verifyLicense(license) && developerID != null) {
                 LicenseV2 temp = clientLicenses.get(license);
                 String libraryName = temp.getLibraryName();
-                System.out.printf("License corresponds to library %s\n",
-                        libraryName);
+                System.out.printf("License corresponds to library %s\n", libraryName);
 
-                if (NetworkUtilities.writeFile(connection,
-                        libraries.get(libraryName))) {
+                if (NetworkUtilities.writeFile(connection, libraries.get(libraryName))) {
                     try {
                         if (inStream.readBoolean()) {
-                            System.out.println(
-                                    "File sent successfully, removing license");
+                            System.out.println("File sent successfully, removing license");
                             decrementLicense(license);
                         } else {
-                            System.err.println("Something went wrong on the"
-                                    + " linker's end");
+                            System.err.println("Something went wrong on the" + " linker's end");
                         }
                     } catch (IOException e) {
-                        System.err.println("Error: encountered I/O error during"
-                                + " file transfer");
+                        System.err
+                                .println("Error: encountered I/O error during" + " file transfer");
                         e.printStackTrace();
                     }
                 }
             } else {
-                System.out.println("Could not verify license, sending"
-                        + " rejection to Linker");
-                DataOutputStream outStream =
-                    NetworkUtilities.getDataOutputStream(connection);
+                System.out.println("Could not verify license, sending" + " rejection to Linker");
+                DataOutputStream outStream = NetworkUtilities.getDataOutputStream(connection);
 
                 try {
                     outStream.writeLong(-1);
@@ -178,8 +169,7 @@ public class SWHV2 {
                             + "sending rejection to Linker");
                     e.printStackTrace();
                 }
-                NetworkUtilities.closeSocketDataOutputStream(outStream,
-                        connection);
+                NetworkUtilities.closeSocketDataOutputStream(outStream, connection);
             }
 
             NetworkUtilities.closeSocketDataInputStream(inStream, connection);
@@ -195,10 +185,8 @@ public class SWHV2 {
     }
 
     private void generateLicenses(SSLSocket connection) {
-        DataInputStream inStream = NetworkUtilities
-                .getDataInputStream(connection);
-        DataOutputStream outStream = NetworkUtilities
-                .getDataOutputStream(connection);
+        DataInputStream inStream = NetworkUtilities.getDataInputStream(connection);
+        DataOutputStream outStream = NetworkUtilities.getDataOutputStream(connection);
 
         if (inStream != null && outStream != null) {
             System.out.println("Reading license request from "
@@ -211,63 +199,52 @@ public class SWHV2 {
                 libName = inStream.readUTF();
                 numLicenses = inStream.readInt();
 
-                System.out.println(connection.getInetAddress()
-                        .getCanonicalHostName()
-                        + ":"
-                        + connection.getPort()
-                        + " requested "
-                        + numLicenses
-                        + " licenses for "
+                System.out.println(connection.getInetAddress().getCanonicalHostName() + ":"
+                        + connection.getPort() + " requested " + numLicenses + " licenses for "
                         + libName);
             } catch (IOException e) {
-                System.err.println("Error: could not "
-                        + "read library name and numLicenses");
+                System.err.println("Error: could not " + "read library name and numLicenses");
                 e.printStackTrace();
             }
 
-            if (numLicenses != -1 && libName != null
-                    && libraries.containsKey(libName)) {
+            if (numLicenses != -1 && libName != null && libraries.containsKey(libName)) {
                 try {
                     System.out.println("Generating licenses for "
-                            + connection.getInetAddress()
-                                    .getCanonicalHostName() + ":"
+                            + connection.getInetAddress().getCanonicalHostName() + ":"
                             + connection.getPort());
                     outStream.writeInt(numLicenses);
 
                     for (int i = 0; i < numLicenses; i++) {
-                        String s = libName + i + System.currentTimeMillis()
-                                + Math.random();
+                        String s = libName + i + System.currentTimeMillis() + Math.random();
                         MessageDigest md = MessageDigest.getInstance("MD5");
 
                         // Note that s.getBytes() is not platform independent.
                         // Better approach would be to use character encodings.
-                        String license = NetworkUtilities.bytesToHex(md
-                                .digest(s.getBytes()));
+                        String license = NetworkUtilities.bytesToHex(md.digest(s.getBytes()));
                         outStream.writeUTF(license);
 
-                        addLicense(license,
-                                new LicenseV2(license,
-                                        InetAddress.getLocalHost(), libName,
-                                        connection.getInetAddress()
-                                                .getCanonicalHostName(),
-                                                1 /* number of uses */,
-                                                connection.getLocalPort()));
+                        addLicense(license, new LicenseV2(license, InetAddress.getLocalHost(),
+                                libName, connection.getInetAddress().getCanonicalHostName(), 1 /*
+                                                                                                * number
+                                                                                                * of
+                                                                                                * uses
+                                                                                                */,
+                                connection.getLocalPort()));
                     }
                 } catch (IOException e) {
                     System.err.println("Error: encountered I/O error whilst "
                             + "generating licenses");
                     e.printStackTrace();
                 } catch (NoSuchAlgorithmException e) {
-                    System.err.println("Error: could not construct MD5 message"
-                            + "digest");
+                    System.err.println("Error: could not construct MD5 message" + "digest");
                     e.printStackTrace();
                 }
             } else {
                 try {
                     System.out.println("Refusing developer license request");
                     System.out.printf("Found values:\n\tnumLicenses: %d\n"
-                            + "\tlibName: %s\n\thasLibrary? %s\n", numLicenses,
-                            libName, libraries.containsKey(libName));
+                            + "\tlibName: %s\n\thasLibrary? %s\n", numLicenses, libName,
+                            libraries.containsKey(libName));
                     outStream.writeInt(-1);
                 } catch (IOException e) {
                     System.err.println("Error: could not say no to Developer");
@@ -285,26 +262,22 @@ public class SWHV2 {
 
     public static void main(String[] args) {
         SWHV2 swh = null;
-        System.out.println(
-        "Please Enter:\n"
-                + "\t<Port> <keyFilePath> <trustFilePath> <Password>");
-       /* if (args.length < 4) {
-            System.out.println("Usage:\n"
-                    + "requires one integer parameter for port\n");
-            return;
-        }*/
+        System.out.println("Please Enter:\n" + "\t<Port> <keyFilePath> <trustFilePath> <Password>");
+        /*
+         * if (args.length < 4) { System.out.println("Usage:\n" +
+         * "requires one integer parameter for port\n"); return; }
+         */
         Scanner sc = new Scanner(System.in);
         int portNumber = sc.nextInt();
         String keyFile = sc.next();
         String trustFile = sc.next();
         String password = sc.next();
         try {
-            //TODO
+            // TODO
             swh = new SWHV2(portNumber, keyFile, trustFile, password);
             sc.close();
         } catch (UnknownHostException e) {
-            System.err.println("Error: host name could"
-                    + " not be resolved; exiting");
+            System.err.println("Error: host name could" + " not be resolved; exiting");
             e.printStackTrace();
         } catch (IOException e) {
             System.err.println("Error: an IO error occurred during"
@@ -312,14 +285,12 @@ public class SWHV2 {
             e.printStackTrace();
         }
         if (swh != null) {
-            //Scanner sc = new Scanner(System.in);
-            System.out.println("How many files is this SoftwareHouse"
-                    + "responsible for?");
+            // Scanner sc = new Scanner(System.in);
+            System.out.println("How many files is this SoftwareHouse" + "responsible for?");
             int nFiles = sc.nextInt();
 
-            System.out.printf("Enter %d files in format:\n"
-                    + "\t<LibraryName> <Path>\n" + "Example:\n"
-                    + "\tsample.google.buzz ./sample/google/buzz\n", nFiles);
+            System.out.printf("Enter %d files in format:\n" + "\t<LibraryName> <Path>\n"
+                    + "Example:\n" + "\tsample.google.buzz ./sample/google/buzz\n", nFiles);
             for (int i = 0; i < nFiles; i++) {
                 String libName, libPath;
                 libName = sc.next();

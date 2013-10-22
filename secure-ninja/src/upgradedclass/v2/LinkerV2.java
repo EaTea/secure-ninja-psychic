@@ -26,16 +26,16 @@ public class LinkerV2 {
 
     private SSLSocketFactory sslFact;
 
-    public LinkerV2(int portNumber, String keyFile, String trustFile,
-            String password) throws UnknownHostException, IOException {
-        System.out.printf("Creating new LinkBroker at %s:%d\n", InetAddress
-                .getLocalHost().getCanonicalHostName(), portNumber);
-        sslFact = (SSLSocketFactory) SecurityUtilitiesV2.getSSLSocketFactory(
+    public LinkerV2(int portNumber, String keyFile, String trustFile, String password)
+            throws UnknownHostException, IOException {
+        System.out.printf("Creating new LinkBroker at %s:%d\n", InetAddress.getLocalHost()
+                .getCanonicalHostName(), portNumber);
+        sslFact = (SSLSocketFactory) SecurityUtilitiesV2.getSSLSocketFactory(keyFile, trustFile,
+                password);
+        sslServFact = (SSLServerSocketFactory) SecurityUtilitiesV2.getSSLServerSocketFactory(
                 keyFile, trustFile, password);
-        sslServFact = (SSLServerSocketFactory) SecurityUtilitiesV2
-                .getSSLServerSocketFactory(keyFile, trustFile, password);
-        serverConnection = (SSLServerSocket) sslServFact.createServerSocket(
-                portNumber, 0, InetAddress.getLocalHost());
+        serverConnection = (SSLServerSocket) sslServFact.createServerSocket(portNumber, 0,
+                InetAddress.getLocalHost());
     }
 
     private void processRequests() {
@@ -44,8 +44,7 @@ public class LinkerV2 {
             try {
                 s = (SSLSocket) serverConnection.accept();
                 System.out.println("New connection from "
-                        + s.getInetAddress().getCanonicalHostName() + ":"
-                        + s.getPort());
+                        + s.getInetAddress().getCanonicalHostName() + ":" + s.getPort());
             } catch (IOException e) {
                 System.err.println("Error: I/O error whilst accepting socket");
                 e.printStackTrace();
@@ -56,8 +55,7 @@ public class LinkerV2 {
                 try {
                     s.close();
                 } catch (IOException e) {
-                    System.err.println("Error: I/O error whilst closing"
-                            + " socket");
+                    System.err.println("Error: I/O error whilst closing" + " socket");
                     e.printStackTrace();
                 }
             }
@@ -65,37 +63,30 @@ public class LinkerV2 {
     }
 
     private void packageJarFile(SSLSocket connection) {
-        DataInputStream inStream = NetworkUtilitiesV2
-                .getDataInputStream(connection);
-        DataOutputStream outStream = NetworkUtilitiesV2
-                .getDataOutputStream(connection);
+        DataInputStream inStream = NetworkUtilitiesV2.getDataInputStream(connection);
+        DataOutputStream outStream = NetworkUtilitiesV2.getDataOutputStream(connection);
 
         if (inStream != null && outStream != null) {
             JarOutputStream jarOut = null;
             Manifest manifest = null;
             try {
                 manifest = new Manifest();
-                manifest.getMainAttributes().put(
-                        Attributes.Name.MANIFEST_VERSION, "1.0");
-                manifest.getMainAttributes().put(Attributes.Name.CLASS_PATH,
-                        ".");
+                manifest.getMainAttributes().put(Attributes.Name.MANIFEST_VERSION, "1.0");
+                manifest.getMainAttributes().put(Attributes.Name.CLASS_PATH, ".");
 
                 String mainFile = inStream.readUTF();
                 mainFile = mainFile.replaceAll("/", ".").substring(0,
                         mainFile.lastIndexOf(".class"));
-                manifest.getMainAttributes().put(Attributes.Name.MAIN_CLASS,
-                        mainFile);
+                manifest.getMainAttributes().put(Attributes.Name.MAIN_CLASS, mainFile);
 
                 System.err.println("DEBUG:main-point: " + mainFile);
 
-                jarOut = new JarOutputStream(new FileOutputStream("temp.jar"),
-                        manifest);
+                jarOut = new JarOutputStream(new FileOutputStream("temp.jar"), manifest);
             } catch (FileNotFoundException e1) {
                 System.err.println("Error: could not create temp.jar");
                 e1.printStackTrace();
             } catch (IOException e1) {
-                System.err.println("Error: I/O error whilst constructing "
-                        + "JarOutputStream");
+                System.err.println("Error: I/O error whilst constructing " + "JarOutputStream");
                 e1.printStackTrace();
             }
 
@@ -105,8 +96,7 @@ public class LinkerV2 {
                     System.out.println("Reading number of licenses");
                     nLicenses = inStream.readInt();
                 } catch (IOException e) {
-                    System.err
-                            .println("Error: I/O error during license reading");
+                    System.err.println("Error: I/O error during license reading");
                     e.printStackTrace();
                     nLicenses = -1;
                 }
@@ -122,8 +112,7 @@ public class LinkerV2 {
                             swhPort = inStream.readInt();
                             license = inStream.readUTF();
                         } catch (IOException e) {
-                            System.err.println(
-                                   "Error: could not read license information");
+                            System.err.println("Error: could not read license information");
                             e.printStackTrace();
                             break;
                         }
@@ -131,10 +120,9 @@ public class LinkerV2 {
                         if (swhIP != null && license != null && swhPort != -1) {
                             SSLSocket swhCon;
                             try {
-                                System.out.println("Establishing socket to "
-                                        + swhIP + ":" + swhPort);
-                                swhCon = (SSLSocket) sslFact.createSocket(
-                                        swhIP, swhPort);
+                                System.out.println("Establishing socket to " + swhIP + ":"
+                                        + swhPort);
+                                swhCon = (SSLSocket) sslFact.createSocket(swhIP, swhPort);
                                 DataOutputStream swhOut = NetworkUtilitiesV2
                                         .getDataOutputStream(swhCon);
 
@@ -142,13 +130,10 @@ public class LinkerV2 {
                                 swhOut.writeUTF("VER");
 
                                 swhOut.writeUTF(license);
-                                swhOut.writeUTF(connection.getInetAddress()
-                                        .getCanonicalHostName());
+                                swhOut.writeUTF(connection.getInetAddress().getCanonicalHostName());
 
-                                if (NetworkUtilitiesV2.readFile(swhCon, jarOut,
-                                        true)) {
-                                    System.out
-                                            .println("Successfully read file");
+                                if (NetworkUtilitiesV2.readFile(swhCon, jarOut, true)) {
+                                    System.out.println("Successfully read file");
                                     System.out.println("Notifying SWH and Dev");
                                     outStream.writeBoolean(true);
                                     swhOut.writeBoolean(true);
@@ -163,8 +148,7 @@ public class LinkerV2 {
 
                                 swhCon.close();
                             } catch (UnknownHostException e) {
-                                System.err.println("Error: could not resolve"
-                                        + "SWH IP");
+                                System.err.println("Error: could not resolve" + "SWH IP");
                                 e.printStackTrace();
                             } catch (IOException e) {
                                 System.err.println("Error: encountered I/O"
@@ -180,9 +164,8 @@ public class LinkerV2 {
                                 count = -1;
                                 break;
                             } catch (IOException e) {
-                                System.err.println(
-                                        "Error: could not tell developer"
-                                          + " that we could not read licenses");
+                                System.err.println("Error: could not tell developer"
+                                        + " that we could not read licenses");
                                 e.printStackTrace();
                                 count = -1;
                                 break;
@@ -191,61 +174,51 @@ public class LinkerV2 {
                     }
 
                     if (count == nLicenses) {
-                        System.out
-                               .println("Successfully read all files into JAR");
+                        System.out.println("Successfully read all files into JAR");
                         try {
                             outStream.writeBoolean(true);
                         } catch (IOException e) {
-                            System.err.println(
-                                "Error: Could not notify developer of success");
+                            System.err.println("Error: Could not notify developer of success");
                             e.printStackTrace();
                         }
 
-                        System.out
-                                .println("Reading class files from Developer");
+                        System.out.println("Reading class files from Developer");
                         int nFiles = -1;
                         try {
                             nFiles = inStream.readInt();
                             count = 0;
 
                             for (int i = 0; i < nFiles; i++) {
-                                if (NetworkUtilitiesV2.readFile(connection,
-                                        jarOut, true)) {
+                                if (NetworkUtilitiesV2.readFile(connection, jarOut, true)) {
                                     count++;
                                 } else {
-                                    System.out
-                                        .println("Could not read files to JAR");
+                                    System.out.println("Could not read files to JAR");
                                     break;
                                 }
                             }
                         } catch (IOException e) {
-                            System.err.println(
-                              "Error: IO Exception whilst reading class files");
+                            System.err.println("Error: IO Exception whilst reading class files");
                             e.printStackTrace();
                         }
 
                         try {
                             jarOut.close();
                         } catch (IOException e) {
-                            System.err.println(
-                             "Error: could not properly close JarOutputStream");
+                            System.err.println("Error: could not properly close JarOutputStream");
                             e.printStackTrace();
                         }
 
                         if (nFiles != -1 && count == nFiles) {
                             File jarFile = new File("temp.jar");
-                            if (NetworkUtilitiesV2.writeFile(connection,
-                                    jarFile)) {
-                                System.out
-                                        .println("Sent JAR file successfully");
+                            if (NetworkUtilitiesV2.writeFile(connection, jarFile)) {
+                                System.out.println("Sent JAR file successfully");
                             } else {
                                 System.out.println("Could not send JAR file");
                             }
 
                             System.out.println("Cleanup: deleting JAR file");
                             if (jarFile.delete()) {
-                                System.out.println("Successfully deleted"
-                                        + " temp.jar");
+                                System.out.println("Successfully deleted" + " temp.jar");
                             } else {
                                 System.out.println("Something went wrong,"
                                         + " could not delete temp.jar");
@@ -253,12 +226,10 @@ public class LinkerV2 {
                         }
                     } else {
                         try {
-                            System.out
-                                  .println("Linking fail, notifying developer");
+                            System.out.println("Linking fail, notifying developer");
                             outStream.writeBoolean(false);
                         } catch (IOException e) {
-                            System.err
-                                  .println("Error: could not notify developer");
+                            System.err.println("Error: could not notify developer");
                             e.printStackTrace();
                         }
                     }
@@ -267,8 +238,7 @@ public class LinkerV2 {
                 }
             }
             NetworkUtilitiesV2.closeSocketDataInputStream(inStream, connection);
-            NetworkUtilitiesV2.closeSocketDataOutputStream(outStream,
-                    connection);
+            NetworkUtilitiesV2.closeSocketDataOutputStream(outStream, connection);
 
             System.out.println("<-----End Communication----->");
             System.out.println();
@@ -281,8 +251,7 @@ public class LinkerV2 {
          * System.out.println("Usage: requires one integer parameter for port");
          * return; }
          */
-        System.out.println("Please Enter:\n"
-                + "\t<Port> <keyFilePath> <trustFilePath> <Password>");
+        System.out.println("Please Enter:\n" + "\t<Port> <keyFilePath> <trustFilePath> <Password>");
         Scanner sc = new Scanner(System.in);
         int portNumber = sc.nextInt();
         String keyFile = sc.next();
@@ -295,8 +264,7 @@ public class LinkerV2 {
             System.err.println("Error: could not resolve hostname");
             e.printStackTrace();
         } catch (IOException e) {
-            System.err.println("Error: I/O error whilst establishing"
-                    + " new Linker");
+            System.err.println("Error: I/O error whilst establishing" + " new Linker");
             e.printStackTrace();
         }
         if (link != null) {
