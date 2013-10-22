@@ -134,7 +134,7 @@ public class SWHV2 {
                 license = inStream.readUTF();
                 developerID = inStream.readUTF();
                 System.out.printf("Read in license %s\n", license);
-                license = processLicense(license, developerID);
+                license = unwrapLicense(license, developerID);
             } catch (IOException e) {
                 System.err.println("Error: I/O error whilst reading licenses");
                 e.printStackTrace();
@@ -180,8 +180,9 @@ public class SWHV2 {
         System.out.println();
     }
 
-    private String processLicense(String license, String developerID) {
+    private String unwrapLicense(String license, String developerID) {
         // No-op in the insecure case, will decrypt in the secure case
+        // TODO: decrypt license string using our own private key
         return license;
     }
 
