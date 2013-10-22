@@ -1,4 +1,4 @@
-package upgradedclass.v2;
+package snp.linker;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -17,6 +17,9 @@ import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLServerSocket;
+
+import snp.NetworkUtilitiesV2;
+import snp.SecurityUtilitiesV2;
 
 public class LinkerV2 {
 

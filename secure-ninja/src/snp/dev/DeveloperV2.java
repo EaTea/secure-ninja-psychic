@@ -1,4 +1,4 @@
-package upgradedclass.v2;
+package snp.dev;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -18,6 +18,8 @@ import java.util.Scanner;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.SSLSocket;
 import snp.NetworkUtilities;
+import snp.SecurityUtilitiesV2;
+import snp.swh.LicenseV2;
 
 public class DeveloperV2 {
 

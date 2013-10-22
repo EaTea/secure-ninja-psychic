@@ -1,4 +1,4 @@
-package upgradedclass.v2;
+package snp;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;

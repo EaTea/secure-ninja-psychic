@@ -1,7 +1,7 @@
 /**
  * 
  */
-package upgradedclass.v2;
+package snp.swh;
 
 import java.net.InetAddress;
 

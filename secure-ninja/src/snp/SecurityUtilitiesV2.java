@@ -1,4 +1,4 @@
-package upgradedclass.v2;
+package snp;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
