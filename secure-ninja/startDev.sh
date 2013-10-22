@@ -1,3 +1,6 @@
 #!/bin/bash
 
-java -cp . snp.dev.InsecureDeveloper
+cd bin
+java -cp . snp.dev.DeveloperV2 ../keystores/dev-truststore.jks cits3231 
+#java -cp . snp.dev.DeveloperV2
+cd ..

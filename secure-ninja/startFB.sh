@@ -1,3 +1,5 @@
 #!/bin/bash
 
-echo "1 Fizz fb/fizz/Fizz.class" | java -cp . snp.swh.InsecureSWH 8001
+cd bin
+echo " 1 Fizz fb/fizz/Fizz.class" | java -cp . snp.swh.SWHV2 8002 ../keystores/fb-keystore.jks cits3231
+cd ..
