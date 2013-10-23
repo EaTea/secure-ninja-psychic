@@ -17,6 +17,11 @@ public class LicenseV2 {
     /**
      * 
      */
+    private String encryptedLicense;
+
+    /**
+     * 
+     */
     private String developerID;
     /**
      * 
@@ -33,14 +38,6 @@ public class LicenseV2 {
 
     private int port;
 
-    private void setPort(int port) {
-        this.port = port;
-    }
-
-    public int getPort() {
-        return port;
-    }
-
     /**
      * 
      * @param license
@@ -49,13 +46,22 @@ public class LicenseV2 {
      * @param developerIP
      */
     public LicenseV2(String license, InetAddress swhIP, String name, String developerID,
-            int licenses, int port) {
+            int licenses, int port, String encrypted) {
         this.licenseString = license;
         this.softwareHouseIP = swhIP;
         this.libraryName = name;
         this.setDeveloperID(developerID);
         this.numberLicenses = licenses;
         this.port = port;
+        this.encryptedLicense = encrypted;
+    }
+
+    private void setPort(int port) {
+        this.port = port;
+    }
+
+    public int getPort() {
+        return port;
     }
 
     /**
@@ -118,11 +124,11 @@ public class LicenseV2 {
         return numberLicenses;
     }
 
-    public void setNumberLicenses(int numLicense) {
-        this.numberLicenses = numLicense;
-    }
-
     public void decrementNumberLicenses() {
         numberLicenses--;
+    }
+
+    public String getEncryptedLicense() {
+        return encryptedLicense;
     }
 }
