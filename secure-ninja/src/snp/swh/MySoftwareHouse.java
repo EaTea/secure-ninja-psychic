@@ -36,36 +36,6 @@ public class MySoftwareHouse {
     private ServerSocket server;
 
     /**
-     * 
-     * @param args
-     */
-    public static void main(String[] args) {
-        MySoftwareHouse mswh = new MySoftwareHouse();
-        int port = Integer.parseInt(args[0]);
-        for (int i = 1; i < args.length - 1; i += 2) {
-            mswh.addLibraryFile(args[i], args[i + 1]);
-        }
-        try {
-            mswh.server = new ServerSocket(port,
-                    0 /* Java Implementation Specific */,
-                    InetAddress.getLocalHost());
-            System.out.println("Software House: " +
-                    mswh.server.getInetAddress().getCanonicalHostName() + " " +
-                    mswh.server.getLocalPort());
-            for (String libName : mswh.libraries.keySet()) {
-                System.out.println("\t" + libName + " " +
-                        mswh.libraries.get(libName).getAbsolutePath());
-            }
-            mswh.generateLicenses(mswh.server.accept());
-            mswh.acceptLicenses(mswh.server.accept());
-            mswh.server.close(); //TODO: get rid of this?
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-    }
-
-    /**
      *
      */
     public void generateLicenses(Socket connection) {
@@ -178,5 +148,35 @@ public class MySoftwareHouse {
      */
     public void addLibraryFile(String libraryName, String fileName) {
         libraries.put(libraryName, new File(fileName));
+    }
+
+    /**
+     * 
+     * @param args
+     */
+    public static void main(String[] args) {
+        MySoftwareHouse mswh = new MySoftwareHouse();
+        int port = Integer.parseInt(args[0]);
+        for (int i = 1; i < args.length - 1; i += 2) {
+            mswh.addLibraryFile(args[i], args[i + 1]);
+        }
+        try {
+            mswh.server = new ServerSocket(port,
+                    0 /* Java Implementation Specific */,
+                    InetAddress.getLocalHost());
+            System.out.println("Software House: " +
+                    mswh.server.getInetAddress().getCanonicalHostName() + " " +
+                    mswh.server.getLocalPort());
+            for (String libName : mswh.libraries.keySet()) {
+                System.out.println("\t" + libName + " " +
+                        mswh.libraries.get(libName).getAbsolutePath());
+            }
+            mswh.generateLicenses(mswh.server.accept());
+            mswh.acceptLicenses(mswh.server.accept());
+            mswh.server.close(); //TODO: get rid of this?
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
     }
 }

@@ -1,21 +1,31 @@
 package snp.swh;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.security.InvalidKeyException;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLSocket;
-import snp.NetworkUtilities;
+
+import snp.LicenseV2;
+import snp.NetworkUtilitiesV2;
 import snp.SecurityUtilitiesV2;
 
 public class SWHV2 {
@@ -28,14 +38,21 @@ public class SWHV2 {
 
     private SSLServerSocket serverConnection;
 
+    private KeyPair myKey;
+    
+    private static final int keySize = 2048;
+    
     public SWHV2(int serverPort, String keyFile, String password) throws UnknownHostException,
-            IOException {
+            IOException, NoSuchAlgorithmException {
         clientLicenses = new HashMap<String, LicenseV2>();
         libraries = new HashMap<String, File>();
         sslservfact = (SSLServerSocketFactory) SecurityUtilitiesV2.getSSLServerSocketFactory(
                 keyFile, password);
         serverConnection = (SSLServerSocket) sslservfact.createServerSocket(serverPort, 0,
                 InetAddress.getLocalHost());
+        KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
+        keyGen.initialize(keySize);
+        myKey = keyGen.genKeyPair();
         System.out.println("Created a new SoftwareHouse at "
                 + serverConnection.getInetAddress().getCanonicalHostName() + ":"
                 + serverConnection.getLocalPort());
@@ -87,7 +104,7 @@ public class SWHV2 {
                 System.out.println("Accepting connection from "
                         + connection.getInetAddress().getCanonicalHostName() + ":"
                         + connection.getPort());
-                DataInputStream inStream = NetworkUtilities.getDataInputStream(connection);
+                ObjectInputStream inStream = NetworkUtilitiesV2.getObjectInputStream(connection);
 
                 if (inStream != null) {
                     String command = null;
@@ -121,7 +138,7 @@ public class SWHV2 {
     }
 
     private void acceptLicenses(SSLSocket connection) {
-        DataInputStream inStream = NetworkUtilities.getDataInputStream(connection);
+        ObjectInputStream inStream = NetworkUtilitiesV2.getObjectInputStream(connection);
         if (inStream != null) {
             System.out.println("Checking if license is legitimate");
             String license = null, developerID = null;
@@ -129,18 +146,18 @@ public class SWHV2 {
                 license = inStream.readUTF();
                 developerID = inStream.readUTF();
                 System.out.printf("Read in license %s\n", license);
-                license = unwrapLicense(license, developerID);
+                license = unwrapLicense(license);
             } catch (IOException e) {
                 System.err.println("Error: I/O error whilst reading licenses");
                 e.printStackTrace();
             }
 
-            if (verifyLicense(license) && developerID != null) {
+            if (license != null && verifyLicense(license) && developerID != null) {
                 LicenseV2 temp = clientLicenses.get(license);
                 String libraryName = temp.getLibraryName();
                 System.out.printf("License corresponds to library %s\n", libraryName);
 
-                if (NetworkUtilities.writeFile(connection, libraries.get(libraryName))) {
+                if (NetworkUtilitiesV2.writeFile(connection, libraries.get(libraryName))) {
                     try {
                         if (inStream.readBoolean()) {
                             System.out.println("File sent successfully, removing license");
@@ -156,7 +173,7 @@ public class SWHV2 {
                 }
             } else {
                 System.out.println("Could not verify license, sending" + " rejection to Linker");
-                DataOutputStream outStream = NetworkUtilities.getDataOutputStream(connection);
+                ObjectOutputStream outStream = NetworkUtilitiesV2.getObjectOutputStream(connection);
 
                 try {
                     outStream.writeLong(-1);
@@ -165,25 +182,48 @@ public class SWHV2 {
                             + "sending rejection to Linker");
                     e.printStackTrace();
                 }
-                NetworkUtilities.closeSocketDataOutputStream(outStream, connection);
+                NetworkUtilitiesV2.closeSocketObjectOutputStream(outStream, connection);
             }
 
-            NetworkUtilities.closeSocketDataInputStream(inStream, connection);
+            NetworkUtilitiesV2.closeSocketObjectInputStream(inStream, connection);
         }
 
         System.out.println("<-----End Communication----->");
         System.out.println();
     }
 
-    private String unwrapLicense(String license, String developerID) {
+    private String unwrapLicense(String license) {
         // No-op in the insecure case, will decrypt in the secure case
         // TODO: decrypt license string using our own private key
-        return license;
+        PrivateKey privKey = myKey.getPrivate();
+        try {
+            Cipher cipher = Cipher.getInstance("RSA");
+            cipher.init(Cipher.DECRYPT_MODE, privKey);
+            byte[] decrypted = cipher.doFinal(license.getBytes());
+            String decryptedLicense = NetworkUtilitiesV2.bytesToHex(decrypted);
+            return decryptedLicense;
+        } catch (NoSuchAlgorithmException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (NoSuchPaddingException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (InvalidKeyException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (IllegalBlockSizeException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (BadPaddingException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        return null;
     }
 
     private void generateLicenses(SSLSocket connection) {
-        DataInputStream inStream = NetworkUtilities.getDataInputStream(connection);
-        DataOutputStream outStream = NetworkUtilities.getDataOutputStream(connection);
+        ObjectInputStream inStream = NetworkUtilitiesV2.getObjectInputStream(connection);
+        ObjectOutputStream outStream = NetworkUtilitiesV2.getObjectOutputStream(connection);
 
         if (inStream != null && outStream != null) {
             System.out.println("Reading license request from "
@@ -204,8 +244,21 @@ public class SWHV2 {
                 e.printStackTrace();
             }
 
-            if (numLicenses != -1 && libName != null && libraries.containsKey(libName)) {
+            if (numLicenses > 0 && libName != null && libraries.containsKey(libName)) {
                 try {
+                    System.out.println("Sending my public key to developer");
+                    outStream.writeObject(myKey.getPublic());
+                    
+                    if(!inStream.readBoolean()) {
+                        System.out.println("Receiving my public key by developer failed");
+                        NetworkUtilitiesV2.closeSocketObjectInputStream(inStream, connection);
+                        NetworkUtilitiesV2.closeSocketObjectOutputStream(outStream, connection);
+
+                        System.out.println("<-----End Communication----->");
+                        System.out.println();
+                        return;
+                    }
+
                     System.out.println("Generating licenses for "
                             + connection.getInetAddress().getCanonicalHostName() + ":"
                             + connection.getPort());
@@ -217,9 +270,19 @@ public class SWHV2 {
 
                         // Note that s.getBytes() is not platform independent.
                         // Better approach would be to use character encodings.
-                        String license = NetworkUtilities.bytesToHex(md.digest(s.getBytes()));
+                        String license = NetworkUtilitiesV2.bytesToHex(md.digest(s.getBytes()));
                         outStream.writeUTF(license);
+                        //Developer told us that they cant encrypt our license with our public key
+                        if(!inStream.readBoolean()) {
+                            System.out.println("Developer unable to"
+                             + "encrypt our license with our key, exiting");
+                            NetworkUtilitiesV2.closeSocketObjectInputStream(inStream, connection);
+                            NetworkUtilitiesV2.closeSocketObjectOutputStream(outStream, connection);
 
+                            System.out.println("<-----End Communication----->");
+                            System.out.println();
+                            return;
+                        }
                         addLicense(license, new LicenseV2(license, InetAddress.getLocalHost(),
                                 libName, connection.getInetAddress().getCanonicalHostName(), 1,
                                 connection.getLocalPort(), null
@@ -246,8 +309,8 @@ public class SWHV2 {
                 }
             }
 
-            NetworkUtilities.closeSocketDataInputStream(inStream, connection);
-            NetworkUtilities.closeSocketDataOutputStream(outStream, connection);
+            NetworkUtilitiesV2.closeSocketObjectInputStream(inStream, connection);
+            NetworkUtilitiesV2.closeSocketObjectOutputStream(outStream, connection);
 
             System.out.println("<-----End Communication----->");
             System.out.println();
@@ -282,6 +345,9 @@ public class SWHV2 {
         } catch (IOException e) {
             System.err.println("Error: an IO error occurred during"
                     + " ServerSocket initialisation; exiting");
+            e.printStackTrace();
+        } catch (NoSuchAlgorithmException e) {
+            // TODO Auto-generated catch block
             e.printStackTrace();
         }
         if (swh != null) {
