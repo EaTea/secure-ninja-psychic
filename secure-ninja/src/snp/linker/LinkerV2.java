@@ -1,7 +1,7 @@
 package snp.linker;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -65,8 +65,8 @@ public class LinkerV2 {
     }
 
     private void packageJarFile(SSLSocket connection) {
-        DataInputStream inStream = NetworkUtilitiesV2.getDataInputStream(connection);
-        DataOutputStream outStream = NetworkUtilitiesV2.getDataOutputStream(connection);
+        ObjectInputStream inStream = NetworkUtilitiesV2.getObjectInputStream(connection);
+        ObjectOutputStream outStream = NetworkUtilitiesV2.getObjectOutputStream(connection);
 
         if (inStream != null && outStream != null) {
             JarOutputStream jarOut = null;
@@ -113,6 +113,8 @@ public class LinkerV2 {
                             swhIP = inStream.readUTF();
                             swhPort = inStream.readInt();
                             license = inStream.readUTF();
+                //TODO remove of this. Check to see the license is encrypted
+                            System.out.println(license);
                         } catch (IOException e) {
                             System.err.println("Error: could not read license information");
                             e.printStackTrace();
@@ -125,8 +127,8 @@ public class LinkerV2 {
                                 System.out.println("Establishing socket to " + swhIP + ":"
                                         + swhPort);
                                 swhCon = (SSLSocket) sslFact.createSocket(swhIP, swhPort);
-                                DataOutputStream swhOut = NetworkUtilitiesV2
-                                        .getDataOutputStream(swhCon);
+                                ObjectOutputStream swhOut = NetworkUtilitiesV2
+                                        .getObjectOutputStream(swhCon);
 
                                 // tell SWH that request is for license verify
                                 swhOut.writeUTF("VER");
@@ -239,8 +241,8 @@ public class LinkerV2 {
                     System.out.println("Could not read number of licenses");
                 }
             }
-            NetworkUtilitiesV2.closeSocketDataInputStream(inStream, connection);
-            NetworkUtilitiesV2.closeSocketDataOutputStream(outStream, connection);
+            NetworkUtilitiesV2.closeSocketObjectInputStream(inStream, connection);
+            NetworkUtilitiesV2.closeSocketObjectOutputStream(outStream, connection);
 
             System.out.println("<-----End Communication----->");
             System.out.println();
