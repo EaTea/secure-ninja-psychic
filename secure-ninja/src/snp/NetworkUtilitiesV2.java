@@ -3,8 +3,8 @@ package snp;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.OutputStream;
 import javax.net.ssl.SSLSocket;
 import java.util.jar.JarEntry;
@@ -14,12 +14,14 @@ public class NetworkUtilitiesV2 {
 
     private static char[] hexArray = "0123456789ABCDEF".toCharArray();
 
-    public static ObjectInputStream getObjectInputStream(SSLSocket connection) {
-        ObjectInputStream inStream = null;
+    public static DataInputStream getDataInputStream(SSLSocket connection) {
+        DataInputStream inStream = null;
         try {
             System.out.println("Opening input stream from: "
                     + connection.getInetAddress().getHostName() + ":" + connection.getPort());
-            inStream = new ObjectInputStream(connection.getInputStream());
+            inStream = new DataInputStream(connection.getInputStream());
+      //      System.err.println("WHY DOES OBJECT INPUT STREAM HATE ME?");
+
         } catch (IOException e) {
             System.err.println("Error: could not open I/O socket stream");
             e.printStackTrace();
@@ -27,12 +29,12 @@ public class NetworkUtilitiesV2 {
         return inStream;
     }
 
-    public static ObjectOutputStream getObjectOutputStream(SSLSocket connection) {
-        ObjectOutputStream outStream = null;
+    public static DataOutputStream getDataOutputStream(SSLSocket connection) {
+        DataOutputStream outStream = null;
         try {
             System.out.println("Opening output stream to: "
                     + connection.getInetAddress().getHostName() + ":" + connection.getPort());
-            outStream = new ObjectOutputStream(connection.getOutputStream());
+            outStream = new DataOutputStream(connection.getOutputStream());
         } catch (IOException e) {
             System.err.println("Error: could not open I/O socket stream");
             e.printStackTrace();
@@ -40,7 +42,7 @@ public class NetworkUtilitiesV2 {
         return outStream;
     }
 
-    public static void closeSocketObjectInputStream(ObjectInputStream inStream, SSLSocket connection) {
+    public static void closeSocketDataInputStream(DataInputStream inStream, SSLSocket connection) {
         try {
             System.out.println("Closing input stream from: "
                     + connection.getInetAddress().getHostName() + ":" + connection.getPort());
@@ -52,7 +54,7 @@ public class NetworkUtilitiesV2 {
         }
     }
 
-    public static void closeSocketObjectOutputStream(ObjectOutputStream outStream, SSLSocket connection) {
+    public static void closeSocketDataOutputStream(DataOutputStream outStream, SSLSocket connection) {
         try {
             System.out.println("Closing output stream to: "
                     + connection.getInetAddress().getHostName() + ":" + connection.getPort());
@@ -65,7 +67,7 @@ public class NetworkUtilitiesV2 {
     }
 
     public static boolean readFile(SSLSocket connection, OutputStream target, boolean isWritingJAR) {
-        ObjectInputStream inStream = getObjectInputStream(connection);
+        DataInputStream inStream = getDataInputStream(connection);
         boolean success = true;
 
         if (inStream != null) {
@@ -99,7 +101,7 @@ public class NetworkUtilitiesV2 {
     }
 
     public static boolean writeFile(SSLSocket connection, File f) {
-        ObjectOutputStream outStream = getObjectOutputStream(connection);
+        DataOutputStream outStream = getDataOutputStream(connection);
         boolean success = true;
 
         if (outStream != null) {

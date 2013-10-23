@@ -1,15 +1,19 @@
 package snp.dev;
 
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.security.InvalidKeyException;
+import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -45,8 +49,8 @@ public class DeveloperV2 {
     protected File linkFiles(List<File> classFiles, List<LicenseV2> requestedLicenses, final String jarName,
             SSLSocket connection) {
 
-        ObjectInputStream inStream = NetworkUtilitiesV2.getObjectInputStream(connection);
-        ObjectOutputStream outStream = NetworkUtilitiesV2.getObjectOutputStream(connection);
+        DataInputStream inStream = NetworkUtilitiesV2.getDataInputStream(connection);
+        DataOutputStream outStream = NetworkUtilitiesV2.getDataOutputStream(connection);
         File jarFile = null;
 
         if (inStream != null && outStream != null) {
@@ -156,8 +160,8 @@ public class DeveloperV2 {
                 }
             }
 
-            NetworkUtilitiesV2.closeSocketObjectInputStream(inStream, connection);
-            NetworkUtilitiesV2.closeSocketObjectOutputStream(outStream, connection);
+            NetworkUtilitiesV2.closeSocketDataInputStream(inStream, connection);
+            NetworkUtilitiesV2.closeSocketDataOutputStream(outStream, connection);
 
             System.out.println("<-----End Communication----->");
             System.out.println();
@@ -189,15 +193,31 @@ public class DeveloperV2 {
         return requestedLicenses;
     }
 
+    private PublicKey genPublicKey(byte[] keyBytes, String algo) {
+        X509EncodedKeySpec keySpec = new X509EncodedKeySpec(keyBytes);
+        try {
+            KeyFactory keyFact = KeyFactory.getInstance(algo);
+            PublicKey pubKey = keyFact.generatePublic(keySpec);
+            return pubKey;
+        } catch (NoSuchAlgorithmException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+            return null;
+        } catch (InvalidKeySpecException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+            return null;
+        }
+    }
+    
     protected void requestLicense(int numLicense, String libraryName, SSLSocket connection) {
-        ObjectInputStream inStream = NetworkUtilitiesV2.getObjectInputStream(connection);
-        ObjectOutputStream outStream = NetworkUtilitiesV2.getObjectOutputStream(connection);
+        DataInputStream inStream = NetworkUtilitiesV2.getDataInputStream(connection);
+        DataOutputStream outStream = NetworkUtilitiesV2.getDataOutputStream(connection);
 
         if (inStream != null && outStream != null) {
             // later would need to send client credentials
             try {
                 outStream.writeUTF("REQ");
-
                 System.out.printf(
                         "Getting %d licenses for %s from %s\n",
                         numLicense,
@@ -206,15 +226,36 @@ public class DeveloperV2 {
                                 + connection.getPort());
                 outStream.writeUTF(libraryName);
                 outStream.writeInt(numLicense);
-                PublicKey pubKey = null;
-                try {
-                    pubKey = (PublicKey) inStream.readObject();
-                    outStream.writeBoolean(true);
-                } catch (ClassNotFoundException e) {
-                    outStream.writeBoolean(false);
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
+               
+                String algo = inStream.readUTF();
+                //getting SWH's public key
+                int keySize = inStream.readInt();
+                byte[] keyBytes = new byte[keySize];
+                for (int i = 0; i < keySize; i++) {
+                    keyBytes[i] = inStream.readByte();
                 }
+                System.out.print("KeyBytes received ");
+                System.out.println((NetworkUtilitiesV2.bytesToHex(keyBytes)));
+
+                PublicKey pubKey = genPublicKey(keyBytes, algo);
+                System.out.print("KeyBytes generated ");
+                System.out.println(NetworkUtilitiesV2.bytesToHex(pubKey.getEncoded()));
+                if(pubKey == null) {
+                    System.out.println("Unable to reconstruct SWH's public key");
+                    outStream.writeBoolean(false); // tell SWH we can't get their key
+                    
+                    NetworkUtilitiesV2.closeSocketDataInputStream(inStream, connection);
+                    NetworkUtilitiesV2.closeSocketDataOutputStream(outStream, connection);
+
+                    System.out.println("<-----End Communication----->");
+                    System.out.println();
+                    return;
+                }
+                
+                //Telling SWH that we got their key
+                outStream.writeBoolean(true);
+
+                //reading in the number of licenses we received from the SWH
                 int nLicReturned = inStream.readInt();
                 System.out.printf("%s returning %d licenses\n", connection.getInetAddress()
                         .getCanonicalHostName() + ":" + connection.getPort(), nLicReturned);
@@ -230,8 +271,8 @@ public class DeveloperV2 {
                     } else {
                         outStream.writeBoolean(false); //telling SWH we cant encrypt their license
                         System.err.println("Failed to encrypt license with SWH's public key, exiting"); 
-                        NetworkUtilitiesV2.closeSocketObjectInputStream(inStream, connection);
-                        NetworkUtilitiesV2.closeSocketObjectOutputStream(outStream, connection);
+                        NetworkUtilitiesV2.closeSocketDataInputStream(inStream, connection);
+                        NetworkUtilitiesV2.closeSocketDataOutputStream(outStream, connection);
 
                         System.out.println("<-----End Communication----->");
                         System.out.println();
@@ -246,8 +287,8 @@ public class DeveloperV2 {
                     System.out.printf("Received %d licenses from %s\n", nLicReturned, connection
                             .getInetAddress().getCanonicalHostName());
                 }
-                NetworkUtilitiesV2.closeSocketObjectInputStream(inStream, connection);
-                NetworkUtilitiesV2.closeSocketObjectOutputStream(outStream, connection);
+                NetworkUtilitiesV2.closeSocketDataInputStream(inStream, connection);
+                NetworkUtilitiesV2.closeSocketDataOutputStream(outStream, connection);
 
                 System.out.println("<-----End Communication----->");
                 System.out.println();
@@ -275,6 +316,14 @@ public class DeveloperV2 {
             cipher.init(Cipher.ENCRYPT_MODE, pubKey);
             byte[] encrypted = cipher.doFinal(license.getBytes());
             String encryptedLicense = NetworkUtilitiesV2.bytesToHex(encrypted);
+            System.out.println("Unencrypted : " + license);
+            System.out.println("Encrypted : " + encryptedLicense);
+            for(int i = 0; i < 5; i++) {
+                cipher.init(Cipher.ENCRYPT_MODE, pubKey);
+
+                System.out.print(i + " :");
+                System.out.println("Encrypted : " + NetworkUtilitiesV2.bytesToHex(cipher.doFinal(license.getBytes())));
+            }
             return encryptedLicense;
         } catch (NoSuchAlgorithmException e) {
             // TODO Auto-generated catch block
