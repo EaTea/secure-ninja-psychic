@@ -7,6 +7,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
+import java.security.cert.Certificate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -15,8 +19,14 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Scanner;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.SSLSocket;
+
 import snp.NetworkUtilities;
 import snp.SecurityUtilitiesV2;
 import snp.swh.LicenseV2;
@@ -196,9 +206,20 @@ public class DeveloperV2 {
                         .getCanonicalHostName() + ":" + connection.getPort(), nLicReturned);
                 for (int i = 0; i < nLicReturned; i++) {
                     String license = inStream.readUTF();
-                    addLicense(libraryName, new LicenseV2(license, connection.getInetAddress(),
-                            libraryName, InetAddress.getLocalHost().getCanonicalHostName(), 1,
-                            connection.getPort()));
+                    String encrypted = wrapLicense(license, connection);
+                    if(encrypted != null) {
+                        addLicense(libraryName, new LicenseV2(license, connection.getInetAddress(),
+                                libraryName, InetAddress.getLocalHost().getCanonicalHostName(), 1,
+                                connection.getPort(), encrypted));
+                    } else {
+                        System.err.println("Failed to encrypt license with SWH's public key"); 
+                        NetworkUtilities.closeSocketDataInputStream(inStream, connection);
+                        NetworkUtilities.closeSocketDataOutputStream(outStream, connection);
+
+                        System.out.println("<-----End Communication----->");
+                        System.out.println();
+                        return;
+                    }
                 }
 
                 if (nLicReturned <= 0) {
@@ -226,8 +247,35 @@ public class DeveloperV2 {
         licenseMap.get(library).add(l);
     }
 
-    private String wrapLicense(String license) {
+    private String wrapLicense(String license, SSLSocket connection) {
         // TODO: encrypt a license with a SWH public key using asymmetric key encryption
+        try {
+            Certificate cert = connection.getSession().getPeerCertificates()[0];
+            PublicKey pubKey = cert.getPublicKey();
+            Cipher cipher = Cipher.getInstance("RSA");
+            cipher.init(Cipher.ENCRYPT_MODE, pubKey);
+            byte[] encryptedLicense = cipher.doFinal(license.getBytes());
+            String encrypted = encryptedLicense.toString();
+            return encrypted;
+        } catch (NoSuchAlgorithmException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (NoSuchPaddingException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (InvalidKeyException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (IllegalBlockSizeException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (BadPaddingException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (SSLPeerUnverifiedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
         return null;
     }
     
