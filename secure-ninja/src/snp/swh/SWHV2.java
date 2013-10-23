@@ -34,11 +34,7 @@ public class SWHV2 {
         libraries = new HashMap<String, File>();
         sslservfact = (SSLServerSocketFactory) SecurityUtilitiesV2.getSSLServerSocketFactory(
                 keyFile, password);
-        serverConnection = (SSLServerSocket) sslservfact.createServerSocket(serverPort, 0 /*
-                                                                                           * impl
-                                                                                           * .
-                                                                                           * specific
-                                                                                           */,
+        serverConnection = (SSLServerSocket) sslservfact.createServerSocket(serverPort, 0,
                 InetAddress.getLocalHost());
         System.out.println("Created a new SoftwareHouse at "
                 + serverConnection.getInetAddress().getCanonicalHostName() + ":"
@@ -126,7 +122,6 @@ public class SWHV2 {
 
     private void acceptLicenses(SSLSocket connection) {
         DataInputStream inStream = NetworkUtilities.getDataInputStream(connection);
-
         if (inStream != null) {
             System.out.println("Checking if license is legitimate");
             String license = null, developerID = null;
@@ -226,12 +221,9 @@ public class SWHV2 {
                         outStream.writeUTF(license);
 
                         addLicense(license, new LicenseV2(license, InetAddress.getLocalHost(),
-                                libName, connection.getInetAddress().getCanonicalHostName(), 1 /*
-                                                                                                * number
-                                                                                                * of
-                                                                                                * uses
-                                                                                                */,
-                                connection.getLocalPort()));
+                                libName, connection.getInetAddress().getCanonicalHostName(), 1,
+                                connection.getLocalPort(), null
+                                /*SWH doesnt need to store encrypted license*/));
                     }
                 } catch (IOException e) {
                     System.err.println("Error: encountered I/O error whilst "
