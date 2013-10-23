@@ -316,14 +316,14 @@ public class DeveloperV2 {
             cipher.init(Cipher.ENCRYPT_MODE, pubKey);
             byte[] encrypted = cipher.doFinal(license.getBytes());
             String encryptedLicense = NetworkUtilitiesV2.bytesToHex(encrypted);
-            System.out.println("Unencrypted : " + license);
-            System.out.println("Encrypted : " + encryptedLicense);
-            for(int i = 0; i < 5; i++) {
+//            System.out.println("Unencrypted : " + license);
+//            System.out.println("Encrypted : " + encryptedLicense);
+          /*  for(int i = 0; i < 5; i++) {
                 cipher.init(Cipher.ENCRYPT_MODE, pubKey);
 
                 System.out.print(i + " :");
                 System.out.println("Encrypted : " + NetworkUtilitiesV2.bytesToHex(cipher.doFinal(license.getBytes())));
-            }
+            }*/
             return encryptedLicense;
         } catch (NoSuchAlgorithmException e) {
             // TODO Auto-generated catch block

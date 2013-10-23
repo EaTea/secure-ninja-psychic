@@ -194,39 +194,7 @@ public class SWHV2 {
         System.out.println();
     }
     
-    private String wrapLicense(String license, PublicKey pubKey) {
-        if (pubKey == null) {
-            System.out.println("Null PublicKey received");
-            return null;
-        }
-        // TODO: encrypt a license with a SWH public key using asymmetric key encryption
-        try {
-            Cipher cipher = Cipher.getInstance("RSA");
-            cipher.init(Cipher.ENCRYPT_MODE, pubKey);
-            byte[] encrypted = cipher.doFinal(license.getBytes());
-            String encryptedLicense = NetworkUtilitiesV2.bytesToHex(encrypted);
-            System.out.println("Unencrypted : " + license);
-            System.out.println("Encrypted : " + encryptedLicense);
-            return encryptedLicense;
-        } catch (NoSuchAlgorithmException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (NoSuchPaddingException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (InvalidKeyException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (IllegalBlockSizeException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (BadPaddingException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-        return null;
-    }
-
+    //TODO
     private String unwrapLicense(String license) {
         // No-op in the insecure case, will decrypt in the secure case
         // TODO: decrypt license string using our own private key
@@ -311,7 +279,6 @@ public class SWHV2 {
                         // Better approach would be to use character encodings.
                         String license = NetworkUtilitiesV2.bytesToHex(md.digest(s.getBytes()));
                         outStream.writeUTF(license);
-                        wrapLicense(license, myKey.getPublic());
                         //Developer told us that they cant encrypt our license with our public key
                         if(!inStream.readBoolean()) {
                             System.out.println("Developer unable to "
