@@ -38,6 +38,8 @@ public class SecurityUtilitiesV2 {
         try {
             trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
             trustStore.load(fis, password.toCharArray());
+            fis.close();
+
         } catch (NoSuchAlgorithmException e) {
             System.err.println("Error: the algorithm for the keystore could not be loaded");
             e.printStackTrace();
@@ -158,7 +160,6 @@ public class SecurityUtilitiesV2 {
             e.printStackTrace();
             return null;
         }
-        
 
         System.out.println("Generating a SHA1PRNG secure random number generator");
         SecureRandom randomGen = null;
