@@ -2,14 +2,12 @@ package snp;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.Set;
 
 import javax.tools.Diagnostic;
 import javax.tools.DiagnosticCollector;
@@ -20,8 +18,11 @@ import javax.tools.ToolProvider;
 import javax.tools.JavaCompiler.CompilationTask;
 
 public class CompileUtility {
+    private static final String LICENSE_PATTERN = "\\s*[/*].*LICENSE.*[*/]\\s*";
+    
+    private static final String PASSWORD_PATTERN = "\\s*[/*].*PASSWORD.*[*/]\\s*";
 
-    public static boolean compileDevAuth(File f, Map<String, String> licenses) {
+    public static boolean compileSWHFile(File f, String className, String license) {
         Scanner sc = null;
         try {
             sc = new Scanner(f);
@@ -34,17 +35,22 @@ public class CompileUtility {
         StringWriter writer = new StringWriter();
         while (sc.hasNextLine()) {
             String s = sc.nextLine();
-            if (s.indexOf(""))
-            writer.write(s);
+            writer.write(s+"\n");
+            s.trim();
+            if (s.matches(LICENSE_PATTERN)) {
+                writer.write("private static final String LICENSE_STRING = \"" + license + "\";\n");
+                sc.nextLine();
+            }
         }
         
-        String fileName = f.getName();
-        JavaFileObject file = new JavaSourceFromFile(fileName, writer.toString());
+        JavaFileObject file = new JavaSourceFromFile(className, writer.toString());
         return compileJavaFileObject(file);
     }
     
-    public static boolean compile(File f) {
+    public static boolean compileDevFile(File f, String className, Map<String, String> licenses,
+            String password) {
         Scanner sc = null;
+        System.err.println(f.getAbsolutePath());
         try {
             sc = new Scanner(f);
         } catch (FileNotFoundException e) {
@@ -56,11 +62,21 @@ public class CompileUtility {
         StringWriter writer = new StringWriter();
         while (sc.hasNextLine()) {
             String s = sc.nextLine();
-            writer.write(s);
+            writer.write(s+"\n");
+            s.trim();
+            if (s.matches(LICENSE_PATTERN)) {
+                Set<String> libnames = licenses.keySet();
+                for(String name : libnames) {
+                    writer.write("LICENSE_MAP.put(\"" + name + "\", \"" + licenses.get(name) +"\");\n");
+                }
+            } else if (s.matches(PASSWORD_PATTERN)) {
+                writer.write("private static final String PASSWORD = \"" + password + "\";\n");
+                sc.nextLine();
+                // HACK: skip next line as it is: private static final String PASSWORD = "";
+            }
         }
         
-        String fileName = f.getName();
-        JavaFileObject file = new JavaSourceFromFile(fileName, writer.toString());
+        JavaFileObject file = new JavaSourceFromFile(className, writer.toString());
         return compileJavaFileObject(file);
     }
 
@@ -69,7 +85,7 @@ public class CompileUtility {
         DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<JavaFileObject>();
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
         
-
+        
         Iterable<? extends JavaFileObject> compilationUnits = Arrays.asList(file);
         CompilationTask task = compiler.getTask(null, null, diagnostics, null, null,
                 compilationUnits);
@@ -91,11 +107,15 @@ public class CompileUtility {
 
 class JavaSourceFromFile extends SimpleJavaFileObject {
     final String code;
+    final String name;
 
     JavaSourceFromFile(String name, String code) {
         super(URI.create("string:///" + name.replace('.', '/') + Kind.SOURCE.extension),
                 Kind.SOURCE);
+        this.name = name.replace('.', '/');
         this.code = code;
+        
+        System.err.println(this.code);
     }
 
     @Override
