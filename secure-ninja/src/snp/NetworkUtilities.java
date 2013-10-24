@@ -129,6 +129,8 @@ public class NetworkUtilities {
         return false;
     }
 
+    // TODO: Add ACKs to other authors
+    
     public static String bytesToHex(byte[] bytes) {
         char[] hexChars = new char[bytes.length * 2];
         int v;
