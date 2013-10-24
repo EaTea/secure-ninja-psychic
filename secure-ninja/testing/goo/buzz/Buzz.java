@@ -2,9 +2,8 @@ package goo.buzz;
 
 public class Buzz {
     
-    /* <----- MODIFY LICENSE -----> */
+    /* LICENSE PUT HERE */
     private static final String LICENSE_STRING = "";
-    /* <----- END MODIFY LICENSE -----> */
 
     public static boolean buzz(int k, String authString) {
         if (!Buzz.verify(authString)) {
