@@ -5,9 +5,11 @@ import goo.buzz.Buzz;
 
 public class BuzzFizz {
     public static String whatBuzz(int k) {
-        if (Fizz.fizz(k) && Buzz.buzz(k)) return "Fizzbuzz!";
-        else if (Fizz.fizz(k)) return "Fizz!";
-        else if (Buzz.buzz(k)) return "Buzz!";
+        boolean isFizz = Fizz.fizz(k, FizzBuzzAuth.getLicense("fb.fizz.Fizz"));
+        boolean isBuzz = Buzz.buzz(k, FizzBuzzAuth.getLicense("goo.buzz.Buzz"));
+        if (isFizz && isBuzz) return "Fizzbuzz!";
+        else if (isFizz) return "Fizz!";
+        else if (isBuzz) return "Buzz!";
         return "No Buzz!";
     }
 }
