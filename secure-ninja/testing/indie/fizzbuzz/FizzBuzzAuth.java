@@ -12,8 +12,6 @@ class FizzBuzzAuth {
     
     protected static void init() {
         /* <----- LICENSE PUT HERE -----> */
-        LICENSE_MAP.put("fb.fizz.Fizz", "" /* fb.fizz.Fizz license goes here */);
-        LICENSE_MAP.put("goo.buzz.Buzz", "");
     }
     
     protected static String getLicense(String libName) {

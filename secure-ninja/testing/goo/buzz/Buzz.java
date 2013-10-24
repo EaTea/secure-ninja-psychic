@@ -7,7 +7,7 @@ public class Buzz {
 
     public static boolean buzz(int k, String authString) {
         if (!Buzz.verify(authString)) {
-            throw new IllegalArgumentException(authString);
+            throw new IllegalArgumentException("I KNOW EVERYTHING");
         }
         return (k % 5) == 0;
     }
