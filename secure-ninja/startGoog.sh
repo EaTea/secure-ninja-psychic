@@ -1,5 +1,5 @@
 #!/bin/bash
 
-cd bin
-echo "1 Buzz goo/buzz/Buzz.class" | java -cp . snp.swh.SWH 8001 ../keystores/goog-keystore.jks cits3231 
-cd ..
+#cd src
+echo "1 goo.buzz.Buzz" | java -cp bin snp.swh.SWH 8001 keystores/goog-keystore.jks cits3231 testing
+#cd ..
