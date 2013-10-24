@@ -1,25 +1,27 @@
 package snp;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.OutputStream;
-import java.net.Socket;
+import javax.net.ssl.SSLSocket;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 
 public class NetworkUtilities {
 
-    public static DataInputStream getDataInputStream(Socket connection) {
+    private final static char[] hexArray = "0123456789ABCDEF".toCharArray();
+
+    public static DataInputStream getDataInputStream(SSLSocket connection) {
         DataInputStream inStream = null;
         try {
             System.out.println("Opening input stream from: "
-                    + connection.getInetAddress().getHostName() + ":"
-                    + connection.getPort());
+                    + connection.getInetAddress().getHostName() + ":" + connection.getPort());
             inStream = new DataInputStream(connection.getInputStream());
+      //      System.err.println("WHY DOES OBJECT INPUT STREAM HATE ME?");
+
         } catch (IOException e) {
             System.err.println("Error: could not open I/O socket stream");
             e.printStackTrace();
@@ -27,12 +29,11 @@ public class NetworkUtilities {
         return inStream;
     }
 
-    public static DataOutputStream getDataOutputStream(Socket connection) {
+    public static DataOutputStream getDataOutputStream(SSLSocket connection) {
         DataOutputStream outStream = null;
         try {
             System.out.println("Opening output stream to: "
-                    + connection.getInetAddress().getHostName() + ":"
-                    + connection.getPort());
+                    + connection.getInetAddress().getHostName() + ":" + connection.getPort());
             outStream = new DataOutputStream(connection.getOutputStream());
         } catch (IOException e) {
             System.err.println("Error: could not open I/O socket stream");
@@ -41,12 +42,10 @@ public class NetworkUtilities {
         return outStream;
     }
 
-    public static void closeSocketDataInputStream(DataInputStream inStream,
-            Socket connection) {
+    public static void closeSocketDataInputStream(DataInputStream inStream, SSLSocket connection) {
         try {
             System.out.println("Closing input stream from: "
-                    + connection.getInetAddress().getHostName() + ":"
-                    + connection.getPort());
+                    + connection.getInetAddress().getHostName() + ":" + connection.getPort());
             inStream.close();
         } catch (IOException e) {
             System.err.println("Error: could not close I/O socket stream");
@@ -55,12 +54,10 @@ public class NetworkUtilities {
         }
     }
 
-    public static void closeSocketDataOutputStream(DataOutputStream outStream,
-            Socket connection) {
+    public static void closeSocketDataOutputStream(DataOutputStream outStream, SSLSocket connection) {
         try {
             System.out.println("Closing output stream to: "
-                    + connection.getInetAddress().getHostName() + ":"
-                    + connection.getPort());
+                    + connection.getInetAddress().getHostName() + ":" + connection.getPort());
             outStream.close();
         } catch (IOException e) {
             System.err.println("Error: could not close I/O socket stream");
@@ -69,8 +66,7 @@ public class NetworkUtilities {
         }
     }
 
-    public static boolean readFile(Socket connection, OutputStream target,
-            boolean isWritingJAR) {
+    public static boolean readFile(SSLSocket connection, OutputStream target, boolean isWritingJAR) {
         DataInputStream inStream = getDataInputStream(connection);
         boolean success = true;
 
@@ -83,8 +79,8 @@ public class NetworkUtilities {
                 System.out.println("File path: " + filePath);
 
                 if (isWritingJAR) {
-                	// FIXME: filePath separators may need to change
-                	// e.g. ("/" -> "\")
+                    // FIXME: filePath separators may need to change
+                    // e.g. ("/" -> "\")
                     System.out.println("Constructing a JAR file");
                     JarOutputStream jarTarget = (JarOutputStream) target;
                     jarTarget.putNextEntry(new JarEntry(filePath));
@@ -104,7 +100,7 @@ public class NetworkUtilities {
         return false;
     }
 
-    public static boolean writeFile(Socket connection, File f) {
+    public static boolean writeFile(SSLSocket connection, File f) {
         DataOutputStream outStream = getDataOutputStream(connection);
         boolean success = true;
 
@@ -133,15 +129,24 @@ public class NetworkUtilities {
         return false;
     }
 
-    private static char[] hexArray = "0123456789ABCDEF".toCharArray();
     public static String bytesToHex(byte[] bytes) {
         char[] hexChars = new char[bytes.length * 2];
         int v;
-        for ( int j = 0; j < bytes.length; j++ ) {
+        for (int j = 0; j < bytes.length; j++) {
             v = bytes[j] & 0xFF;
             hexChars[j * 2] = hexArray[v >>> 4];
             hexChars[j * 2 + 1] = hexArray[v & 0x0F];
         }
         return new String(hexChars);
+    }
+
+    public static byte[] hexStringToByteArray(String s) {
+        int len = s.length();
+        byte[] data = new byte[len / 2];
+        for (int i = 0; i < len; i += 2) {
+            data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4)
+                                 + Character.digit(s.charAt(i+1), 16));
+        }
+        return data;
     }
 }

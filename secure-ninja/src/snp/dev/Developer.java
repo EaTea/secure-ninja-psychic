@@ -29,28 +29,28 @@ import javax.crypto.NoSuchPaddingException;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.SSLSocket;
 
-import snp.LicenseV2;
-import snp.NetworkUtilitiesV2;
-import snp.SecurityUtilitiesV2;
+import snp.License;
+import snp.NetworkUtilities;
+import snp.SecurityUtilities;
 
-public class DeveloperV2 {
+public class Developer {
 
     private SSLSocketFactory sslfact;
 
-    private Map<String, Queue<LicenseV2>> licenseMap;
+    private Map<String, Queue<License>> licenseMap;
 
-    public DeveloperV2(String trustFile, String password) throws UnknownHostException {
+    public Developer(String trustFile, String password) throws UnknownHostException {
         System.out.println("Developer created at "
                 + InetAddress.getLocalHost().getCanonicalHostName());
-        licenseMap = new HashMap<String, Queue<LicenseV2>>();
-        sslfact = (SSLSocketFactory) SecurityUtilitiesV2.getSSLSocketFactory(trustFile, password);
+        licenseMap = new HashMap<String, Queue<License>>();
+        sslfact = (SSLSocketFactory) SecurityUtilities.getSSLSocketFactory(trustFile, password);
     }
 
-    protected File linkFiles(List<File> classFiles, List<LicenseV2> requestedLicenses, final String jarName,
+    protected File linkFiles(List<File> classFiles, List<License> requestedLicenses, final String jarName,
             SSLSocket connection) {
 
-        DataInputStream inStream = NetworkUtilitiesV2.getDataInputStream(connection);
-        DataOutputStream outStream = NetworkUtilitiesV2.getDataOutputStream(connection);
+        DataInputStream inStream = NetworkUtilities.getDataInputStream(connection);
+        DataOutputStream outStream = NetworkUtilities.getDataOutputStream(connection);
         File jarFile = null;
 
         if (inStream != null && outStream != null) {
@@ -79,7 +79,7 @@ public class DeveloperV2 {
             }
 
             if (count != -1) {
-                for (LicenseV2 lic : requestedLicenses) {
+                for (License lic : requestedLicenses) {
                     try {
                         System.out.println("Writing license to network");
                         outStream.writeUTF(lic.getSoftwareHouseIP().getCanonicalHostName());
@@ -126,7 +126,7 @@ public class DeveloperV2 {
                         for (File f : classFiles) {
                             System.out.println("Sending " + f.getName() + " across network");
 
-                            if (NetworkUtilitiesV2.writeFile(connection, f)) {
+                            if (NetworkUtilities.writeFile(connection, f)) {
                                 count++;
                             } else {
                                 System.err.println("Error occurred sending " + f.getAbsolutePath());
@@ -142,7 +142,7 @@ public class DeveloperV2 {
                         System.out.println("Receiving JAR file from" + " LinkBroker");
                         try {
                             FileOutputStream target = new FileOutputStream(jarName + ".jar");
-                            if (NetworkUtilitiesV2.readFile(connection, target, false)) {
+                            if (NetworkUtilities.readFile(connection, target, false)) {
                                 System.out.println("Successfully received" + " JAR file");
                                 jarFile = new File(jarName + ".jar");
                             } else {
@@ -160,8 +160,8 @@ public class DeveloperV2 {
                 }
             }
 
-            NetworkUtilitiesV2.closeSocketDataInputStream(inStream, connection);
-            NetworkUtilitiesV2.closeSocketDataOutputStream(outStream, connection);
+            NetworkUtilities.closeSocketDataInputStream(inStream, connection);
+            NetworkUtilities.closeSocketDataOutputStream(outStream, connection);
 
             System.out.println("<-----End Communication----->");
             System.out.println();
@@ -169,16 +169,16 @@ public class DeveloperV2 {
         return jarFile;
     }
 
-    private LicenseV2 getLicense(String library) {
+    private License getLicense(String library) {
         if (licenseMap.containsKey(library) && !licenseMap.get(library).isEmpty()) {
             return licenseMap.get(library).peek();
         }
         return null;
     }
 
-    private List<LicenseV2> getLicenses(List<String> libNames) {
+    private List<License> getLicenses(List<String> libNames) {
         System.out.println("Checking licenses");
-        List<LicenseV2> requestedLicenses = new ArrayList<LicenseV2>();
+        List<License> requestedLicenses = new ArrayList<License>();
 
         for (String lib : libNames) {
             if (!hasLicense(lib)) {
@@ -211,8 +211,8 @@ public class DeveloperV2 {
     }
     
     protected void requestLicense(int numLicense, String libraryName, SSLSocket connection) {
-        DataInputStream inStream = NetworkUtilitiesV2.getDataInputStream(connection);
-        DataOutputStream outStream = NetworkUtilitiesV2.getDataOutputStream(connection);
+        DataInputStream inStream = NetworkUtilities.getDataInputStream(connection);
+        DataOutputStream outStream = NetworkUtilities.getDataOutputStream(connection);
 
         if (inStream != null && outStream != null) {
             // later would need to send client credentials
@@ -235,17 +235,17 @@ public class DeveloperV2 {
                     keyBytes[i] = inStream.readByte();
                 }
                 System.out.print("KeyBytes received ");
-                System.out.println((NetworkUtilitiesV2.bytesToHex(keyBytes)));
+                System.out.println((NetworkUtilities.bytesToHex(keyBytes)));
 
                 PublicKey pubKey = genPublicKey(keyBytes, algo);
                 System.out.print("KeyBytes generated ");
-                System.out.println(NetworkUtilitiesV2.bytesToHex(pubKey.getEncoded()));
+                System.out.println(NetworkUtilities.bytesToHex(pubKey.getEncoded()));
                 if(pubKey == null) {
                     System.out.println("Unable to reconstruct SWH's public key");
                     outStream.writeBoolean(false); // tell SWH we can't get their key
                     
-                    NetworkUtilitiesV2.closeSocketDataInputStream(inStream, connection);
-                    NetworkUtilitiesV2.closeSocketDataOutputStream(outStream, connection);
+                    NetworkUtilities.closeSocketDataInputStream(inStream, connection);
+                    NetworkUtilities.closeSocketDataOutputStream(outStream, connection);
 
                     System.out.println("<-----End Communication----->");
                     System.out.println();
@@ -263,7 +263,7 @@ public class DeveloperV2 {
                     String license = inStream.readUTF();
                     String encrypted = wrapLicense(license, pubKey);
                     if(encrypted != null) {
-                        addLicense(libraryName, new LicenseV2(license, connection.getInetAddress(),
+                        addLicense(libraryName, new License(license, connection.getInetAddress(),
                                 libraryName, InetAddress.getLocalHost().getCanonicalHostName(), 1,
                                 connection.getPort(), encrypted));
                       //inform SWH that we successfully added the license
@@ -271,8 +271,8 @@ public class DeveloperV2 {
                     } else {
                         outStream.writeBoolean(false); //telling SWH we cant encrypt their license
                         System.err.println("Failed to encrypt license with SWH's public key, exiting"); 
-                        NetworkUtilitiesV2.closeSocketDataInputStream(inStream, connection);
-                        NetworkUtilitiesV2.closeSocketDataOutputStream(outStream, connection);
+                        NetworkUtilities.closeSocketDataInputStream(inStream, connection);
+                        NetworkUtilities.closeSocketDataOutputStream(outStream, connection);
 
                         System.out.println("<-----End Communication----->");
                         System.out.println();
@@ -287,8 +287,8 @@ public class DeveloperV2 {
                     System.out.printf("Received %d licenses from %s\n", nLicReturned, connection
                             .getInetAddress().getCanonicalHostName());
                 }
-                NetworkUtilitiesV2.closeSocketDataInputStream(inStream, connection);
-                NetworkUtilitiesV2.closeSocketDataOutputStream(outStream, connection);
+                NetworkUtilities.closeSocketDataInputStream(inStream, connection);
+                NetworkUtilities.closeSocketDataOutputStream(outStream, connection);
 
                 System.out.println("<-----End Communication----->");
                 System.out.println();
@@ -298,9 +298,9 @@ public class DeveloperV2 {
         }
     }
 
-    private void addLicense(String library, LicenseV2 l) {
+    private void addLicense(String library, License l) {
         if (!licenseMap.containsKey(library)) {
-            licenseMap.put(library, new LinkedList<LicenseV2>());
+            licenseMap.put(library, new LinkedList<License>());
         }
         licenseMap.get(library).add(l);
     }
@@ -314,8 +314,8 @@ public class DeveloperV2 {
         try {
             Cipher cipher = Cipher.getInstance("RSA");
             cipher.init(Cipher.ENCRYPT_MODE, pubKey);
-            byte[] encrypted = cipher.doFinal(NetworkUtilitiesV2.hexStringToByteArray(license));
-            String encryptedLicense = NetworkUtilitiesV2.bytesToHex(encrypted);
+            byte[] encrypted = cipher.doFinal(NetworkUtilities.hexStringToByteArray(license));
+            String encryptedLicense = NetworkUtilities.bytesToHex(encrypted);
 //            System.out.println("Unencrypted : " + license);
 //            System.out.println("Encrypted : " + encryptedLicense);
           /*  for(int i = 0; i < 5; i++) {
@@ -344,7 +344,7 @@ public class DeveloperV2 {
         return null;
     }
     
-    private void decrementLicense(String library, LicenseV2 lic) {
+    private void decrementLicense(String library, License lic) {
         if (library != null && lic != null
                 && licenseMap.containsKey(library)
                 && !licenseMap.get(library).isEmpty()) {
@@ -396,7 +396,7 @@ public class DeveloperV2 {
                     libNames.add(sc.next());
                 }
                 
-                List<LicenseV2> requestedLicenses = getLicenses(libNames);
+                List<License> requestedLicenses = getLicenses(libNames);
                 if (requestedLicenses == null) {
                     System.out.println("Sorry, you are missing a license for one or more " +
                     		"requested libraries and cannot link");
@@ -444,7 +444,7 @@ public class DeveloperV2 {
             System.exit(1);
         }
         
-        DeveloperV2 dev = null;
+        Developer dev = null;
         //System.out.println("Please Enter:\n" + "\t <keyFilePath> <trustFilePath> <Password>");
 //        System.out.println("Please Enter:\n" + "\t <trustFilePath> <password>");
         Scanner sc = null;
@@ -455,7 +455,7 @@ public class DeveloperV2 {
             String password = args[1];
 //            String trustFile = "../keystores/dev-truststore.jks";
 //            String password = "cits3231";
-            dev = new DeveloperV2(trustFile, password);
+            dev = new Developer(trustFile, password);
         } catch (UnknownHostException e) {
             System.err.println("Error: host name could" + " not be resolved");
             e.printStackTrace();

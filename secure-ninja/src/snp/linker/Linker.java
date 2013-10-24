@@ -18,10 +18,10 @@ import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLServerSocket;
 
-import snp.NetworkUtilitiesV2;
-import snp.SecurityUtilitiesV2;
+import snp.NetworkUtilities;
+import snp.SecurityUtilities;
 
-public class LinkerV2 {
+public class Linker {
 
     private SSLServerSocketFactory sslServFact;
 
@@ -29,12 +29,12 @@ public class LinkerV2 {
 
     private SSLSocketFactory sslFact;
 
-    public LinkerV2(int portNumber, String keyFile, String keyStorePW, String trustFile, String trustStorePW)
+    public Linker(int portNumber, String keyFile, String keyStorePW, String trustFile, String trustStorePW)
             throws UnknownHostException, IOException {
         System.out.printf("Creating new LinkBroker at %s:%d\n", InetAddress.getLocalHost()
                 .getCanonicalHostName(), portNumber);
-        sslFact = (SSLSocketFactory) SecurityUtilitiesV2.getSSLSocketFactory(trustFile, trustStorePW);
-        sslServFact = (SSLServerSocketFactory) SecurityUtilitiesV2.getSSLServerSocketFactory(
+        sslFact = (SSLSocketFactory) SecurityUtilities.getSSLSocketFactory(trustFile, trustStorePW);
+        sslServFact = (SSLServerSocketFactory) SecurityUtilities.getSSLServerSocketFactory(
                 keyFile, keyStorePW);
         serverConnection = (SSLServerSocket) sslServFact.createServerSocket(portNumber, 0,
                 InetAddress.getLocalHost());
@@ -65,8 +65,8 @@ public class LinkerV2 {
     }
 
     private void packageJarFile(SSLSocket connection) {
-        DataInputStream inStream = NetworkUtilitiesV2.getDataInputStream(connection);
-        DataOutputStream outStream = NetworkUtilitiesV2.getDataOutputStream(connection);
+        DataInputStream inStream = NetworkUtilities.getDataInputStream(connection);
+        DataOutputStream outStream = NetworkUtilities.getDataOutputStream(connection);
 
         if (inStream != null && outStream != null) {
             JarOutputStream jarOut = null;
@@ -113,8 +113,6 @@ public class LinkerV2 {
                             swhIP = inStream.readUTF();
                             swhPort = inStream.readInt();
                             license = inStream.readUTF();
-                //TODO remove of this. Check to see the license is encrypted
-                            System.out.println(license);
                         } catch (IOException e) {
                             System.err.println("Error: could not read license information");
                             e.printStackTrace();
@@ -127,7 +125,7 @@ public class LinkerV2 {
                                 System.out.println("Establishing socket to " + swhIP + ":"
                                         + swhPort);
                                 swhCon = (SSLSocket) sslFact.createSocket(swhIP, swhPort);
-                                DataOutputStream swhOut = NetworkUtilitiesV2
+                                DataOutputStream swhOut = NetworkUtilities
                                         .getDataOutputStream(swhCon);
 
                                 // tell SWH that request is for license verify
@@ -136,7 +134,7 @@ public class LinkerV2 {
                                 swhOut.writeUTF(license);
                                 swhOut.writeUTF(connection.getInetAddress().getCanonicalHostName());
 
-                                if (NetworkUtilitiesV2.readFile(swhCon, jarOut, true)) {
+                                if (NetworkUtilities.readFile(swhCon, jarOut, true)) {
                                     System.out.println("Successfully read file");
                                     System.out.println("Notifying SWH and Dev");
                                     outStream.writeBoolean(true);
@@ -193,7 +191,7 @@ public class LinkerV2 {
                             count = 0;
 
                             for (int i = 0; i < nFiles; i++) {
-                                if (NetworkUtilitiesV2.readFile(connection, jarOut, true)) {
+                                if (NetworkUtilities.readFile(connection, jarOut, true)) {
                                     count++;
                                 } else {
                                     System.out.println("Could not read files to JAR");
@@ -214,7 +212,7 @@ public class LinkerV2 {
 
                         if (nFiles != -1 && count == nFiles) {
                             File jarFile = new File("temp.jar");
-                            if (NetworkUtilitiesV2.writeFile(connection, jarFile)) {
+                            if (NetworkUtilities.writeFile(connection, jarFile)) {
                                 System.out.println("Sent JAR file successfully");
                             } else {
                                 System.out.println("Could not send JAR file");
@@ -241,8 +239,8 @@ public class LinkerV2 {
                     System.out.println("Could not read number of licenses");
                 }
             }
-            NetworkUtilitiesV2.closeSocketDataInputStream(inStream, connection);
-            NetworkUtilitiesV2.closeSocketDataOutputStream(outStream, connection);
+            NetworkUtilities.closeSocketDataInputStream(inStream, connection);
+            NetworkUtilities.closeSocketDataOutputStream(outStream, connection);
 
             System.out.println("<-----End Communication----->");
             System.out.println();
@@ -272,9 +270,9 @@ public class LinkerV2 {
         String keyStorePW = args[2];
         String trustFile = args[3];
         String trustStorePW = args[4];
-        LinkerV2 link = null;
+        Linker link = null;
         try {
-            link = new LinkerV2(portNumber, keyFile, keyStorePW, trustFile, trustStorePW);
+            link = new Linker(portNumber, keyFile, keyStorePW, trustFile, trustStorePW);
         } catch (UnknownHostException e) {
             System.err.println("Error: could not resolve hostname");
             e.printStackTrace();

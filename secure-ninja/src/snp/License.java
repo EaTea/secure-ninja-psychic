@@ -9,7 +9,7 @@ import java.net.InetAddress;
  * @author wying1211
  * 
  */
-public class LicenseV2 {
+public class License {
     /**
      * 
      */
@@ -45,7 +45,7 @@ public class LicenseV2 {
      * @param name
      * @param developerIP
      */
-    public LicenseV2(String license, InetAddress swhIP, String name, String developerID,
+    public License(String license, InetAddress swhIP, String name, String developerID,
             int licenses, int port, String encrypted) {
         this.unencryptedLicenseString = license;
         this.softwareHouseIP = swhIP;

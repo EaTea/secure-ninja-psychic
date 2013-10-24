@@ -17,7 +17,7 @@ import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManagerFactory;
 
-public class SecurityUtilitiesV2 {
+public class SecurityUtilities {
 
     public static SSLSocketFactory getSSLSocketFactory(String trustFile, String password) {
         System.out.println("Generating SSLSocketFactory with:");
