@@ -1,5 +1,7 @@
 #!/bin/bash
 
-cd bin
-echo " 1 Fizz fb/fizz/Fizz.class" | java -cp . snp.swh.SWH 8002 ../keystores/fb-keystore.jks cits3231
-cd ..
+#cd src
+echo " 1 fb.fizz.Fizz" | java -cp bin snp.swh.SWH 8002 keystores/fb-keystore.jks cits3231 testing
+visual
+
+#cd ..

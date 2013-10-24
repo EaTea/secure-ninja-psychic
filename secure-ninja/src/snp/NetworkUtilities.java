@@ -66,7 +66,7 @@ public class NetworkUtilities {
         }
     }
 
-    public static boolean readFile(SSLSocket connection, OutputStream target, boolean isWritingJAR) {
+    public static boolean readFile(SSLSocket connection, OutputStream target, boolean isJAREntry) {
         DataInputStream inStream = getDataInputStream(connection);
         boolean success = true;
 
@@ -78,7 +78,7 @@ public class NetworkUtilities {
                 String filePath = inStream.readUTF();
                 System.out.println("File path: " + filePath);
 
-                if (isWritingJAR) {
+                if (isJAREntry) {
                     // FIXME: filePath separators may need to change
                     // e.g. ("/" -> "\")
                     System.out.println("Constructing a JAR file");
@@ -100,7 +100,7 @@ public class NetworkUtilities {
         return false;
     }
 
-    public static boolean writeFile(SSLSocket connection, File f) {
+    public static boolean writeFile(SSLSocket connection, File f, String name) {
         DataOutputStream outStream = getDataOutputStream(connection);
         boolean success = true;
 
@@ -110,8 +110,9 @@ public class NetworkUtilities {
                 long fileSize = f.length();
                 outStream.writeLong(fileSize);
                 System.out.println("Length: " + fileSize);
-                outStream.writeUTF(f.getPath());
-                System.out.println("File path: " + f.getPath());
+                String path = name.replace('.', '/') + ".class";
+                outStream.writeUTF(path);
+                System.out.println("File path: " + path);
 
                 FileInputStream fileInStream = new FileInputStream(f);
                 for (long l = 0; l < fileSize; l++) {
