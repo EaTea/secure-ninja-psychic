@@ -77,8 +77,8 @@ public class Linker {
                 manifest.getMainAttributes().put(Attributes.Name.CLASS_PATH, ".");
 
                 String mainFile = inStream.readUTF();
-                mainFile = mainFile.replaceAll("/", ".").substring(0,
-                        mainFile.lastIndexOf(".class"));
+//                mainFile = mainFile.replaceAll("/", ".").substring(0,
+//                        mainFile.lastIndexOf(".java"));
                 manifest.getMainAttributes().put(Attributes.Name.MAIN_CLASS, mainFile);
 
                 System.err.println("DEBUG:main-point: " + mainFile);
@@ -213,7 +213,7 @@ public class Linker {
                         // TODO: remove temp.jar
                         if (nFiles > 0 && count == nFiles) {
                             File jarFile = new File("temp.jar");
-                            if (NetworkUtilities.writeFile(connection, jarFile)) {
+                            if (NetworkUtilities.writeFile(connection, jarFile, "temp.jar")) {
                                 System.out.println("Sent JAR file successfully");
                             } else {
                                 System.out.println("Could not send JAR file");
