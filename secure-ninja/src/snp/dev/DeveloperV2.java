@@ -314,7 +314,7 @@ public class DeveloperV2 {
         try {
             Cipher cipher = Cipher.getInstance("RSA");
             cipher.init(Cipher.ENCRYPT_MODE, pubKey);
-            byte[] encrypted = cipher.doFinal(license.getBytes());
+            byte[] encrypted = cipher.doFinal(NetworkUtilitiesV2.hexStringToByteArray(license));
             String encryptedLicense = NetworkUtilitiesV2.bytesToHex(encrypted);
 //            System.out.println("Unencrypted : " + license);
 //            System.out.println("Encrypted : " + encryptedLicense);

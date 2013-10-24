@@ -202,7 +202,9 @@ public class SWHV2 {
         try {
             Cipher cipher = Cipher.getInstance("RSA");
             cipher.init(Cipher.DECRYPT_MODE, privKey);
-            byte[] decrypted = cipher.doFinal(license.getBytes());
+            byte[] licenseBytes = NetworkUtilitiesV2.hexStringToByteArray(license);
+            byte[] decrypted = cipher.doFinal(licenseBytes);
+            
             String decryptedLicense = NetworkUtilitiesV2.bytesToHex(decrypted);
             return decryptedLicense;
         } catch (NoSuchAlgorithmException e) {
