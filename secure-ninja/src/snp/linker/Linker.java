@@ -21,14 +21,38 @@ import javax.net.ssl.SSLServerSocket;
 import snp.NetworkUtilities;
 import snp.SecurityUtilities;
 
+/**
+ * 
+ * @author Edwin Tay(20529864) & Wan Ying Goh(20784663)
+ *
+ */
 public class Linker {
 
+    /**
+     * 
+     */
     private SSLServerSocketFactory sslServFact;
 
+    /**
+     * 
+     */
     private SSLServerSocket serverConnection;
 
+    /**
+     * 
+     */
     private SSLSocketFactory sslFact;
 
+    /**
+     * Linker's constructor.
+     * @param portNumber the port the linker server used
+     * @param keyFile
+     * @param keyStorePW
+     * @param trustFile
+     * @param trustStorePW
+     * @throws UnknownHostException
+     * @throws IOException
+     */
     public Linker(int portNumber, String keyFile, String keyStorePW, String trustFile, String trustStorePW)
             throws UnknownHostException, IOException {
         System.out.printf("Creating new LinkBroker at %s:%d\n", InetAddress.getLocalHost()
@@ -39,7 +63,10 @@ public class Linker {
         serverConnection = (SSLServerSocket) sslServFact.createServerSocket(portNumber, 0,
                 InetAddress.getLocalHost());
     }
-
+    
+    /**
+     * Private method to process the request from developer.
+     */
     private void processRequests() {
         while (true) {
             SSLSocket s = null;
@@ -64,6 +91,10 @@ public class Linker {
         }
     }
 
+    /**
+     * 
+     * @param connection socket connecting to developer
+     */
     private void packageJarFile(SSLSocket connection) {
         DataInputStream inStream = NetworkUtilities.getDataInputStream(connection);
         DataOutputStream outStream = NetworkUtilities.getDataOutputStream(connection);
@@ -248,6 +279,13 @@ public class Linker {
         }
     }
 
+    /**
+     * The main program for running Linker.
+     * 5 arguments are expected and they should be given in this order:
+     * [portNumber] [keyStore filepath] [keystore password] 
+     * [truststore filepath] [truststore password]
+     * @param args the arguments that are expected
+     */
     public static void main(String[] args) {
         if (args.length != 5) {
             System.err.println("Usage: needs 5 arguments.");
@@ -258,13 +296,7 @@ public class Linker {
             System.err.println("\tArgument 5 = truststore password");
             System.exit(1);
         }
-        /*
-         * if (args.length < 1) {
-         * System.out.println("Usage: requires one integer parameter for port");
-         * return; }
-         */
-//        System.out.println("Please Enter:\n"
-//                + "\t<Port> <keyFilePath> <keyStorePassword> <trustFilePath> <trustStorePassword>");
+
         Scanner sc = new Scanner(System.in);
         int portNumber = Integer.parseInt(args[0]);
         String keyFile = args[1];

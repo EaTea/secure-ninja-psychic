@@ -52,6 +52,7 @@ public class Developer {
         }
     }
 
+    // TODO Catch InputMismatchException ?
     private void processCommands(Scanner sc) {
         do {
             System.out.println("Commands:\n" + "\tRequest <Hostname> <Port> <LibraryName>"
@@ -155,9 +156,6 @@ public class Developer {
                 for (int i = 0; i < keySize; i++) {
                     keyBytes[i] = inStream.readByte();
                 }
-                System.out.print("KeyBytes received ");
-                System.out.println((NetworkUtilities.bytesToHex(keyBytes)));
-
                 PublicKey pubKey = genPublicKey(keyBytes, algo);
                 if (pubKey == null) {
                     System.out.println("Unable to reconstruct SWH's public key");
@@ -171,9 +169,6 @@ public class Developer {
                     System.out.println();
                     return;
                 }
-                System.out.print("KeyBytes generated ");
-                System.out.println(NetworkUtilities.bytesToHex(pubKey.getEncoded()));
-
                 // Telling SWH that we got their key
                 outStream.writeBoolean(true);
 
