@@ -30,6 +30,8 @@ import snp.SecurityUtilities;
 
 public class SWH {
 
+    private String classpath;
+    
     private Map<String, License> clientLicenses;
 
     private Map<String, File> libraries;
@@ -44,7 +46,7 @@ public class SWH {
     
     private static final String algo = "RSA";
     
-    public SWH(int serverPort, String keyFile, String password) throws UnknownHostException,
+    public SWH(String classpath, int serverPort, String keyFile, String password) throws UnknownHostException,
             IOException, NoSuchAlgorithmException {
         clientLicenses = new HashMap<String, License>();
         libraries = new HashMap<String, File>();
@@ -55,6 +57,10 @@ public class SWH {
         KeyPairGenerator keyGen = KeyPairGenerator.getInstance(algo);
         keyGen.initialize(keySize);
         myKey = keyGen.genKeyPair();
+        this.classpath = classpath;
+        if (classpath.endsWith("/")) {
+            classpath = classpath.substring(0, classpath.length()-2);
+        }
         System.out.println("Created a new SoftwareHouse at "
                 + serverConnection.getInetAddress().getCanonicalHostName() + ":"
                 + serverConnection.getLocalPort());
@@ -320,11 +326,12 @@ public class SWH {
     }
 
     public static void main(String[] args) throws IOException {
-        if (args.length != 3) {
+        if (args.length != 4) {
             System.err.println("Usage: needs 3 arguments.");
             System.err.println("\tArgument 1 = port number");
             System.err.println("\tArgument 2 = keystore filepath");
             System.err.println("\tArgument 3 = keystore password");
+            System.err.println("\tArgument 4 = classpath");
             System.exit(1);
         }
         
@@ -338,15 +345,16 @@ public class SWH {
         String keyFile = args[1];
         // String trustFile = sc.next();
         String password = args[2];
+        String classpath = args[3];
         try {
             // TODO
-            swh = new SWH(portNumber, keyFile, password);
+            swh = new SWH(classpath, portNumber, keyFile, password);
         } catch (UnknownHostException e) {
-            System.err.println("Error: host name could" + " not be resolved; exiting");
+            System.err.println("Error: host name could not be resolved; exiting");
             e.printStackTrace();
         } catch (IOException e) {
-            System.err.println("Error: an IO error occurred during"
-                    + " ServerSocket initialisation; exiting");
+            System.err.println("Error: an IO error occurred during ServerSocket initialisation; " +
+            		"exiting");
             e.printStackTrace();
         } catch (NoSuchAlgorithmException e) {
             // TODO Auto-generated catch block
@@ -354,16 +362,17 @@ public class SWH {
         }
         if (swh != null) {
             Scanner sc = new Scanner(System.in);
-            System.out.println("How many files is this SoftwareHouse" + "responsible for?");
+            System.out.println("How many files is this SoftwareHouse responsible for?");
             int nFiles = sc.nextInt();
 
-            System.out.printf("Enter %d files in format:\n" + "\t<LibraryName> <Path>\n"
-                    + "Example:\n" + "\tsample.google.buzz ./sample/google/buzz\n", nFiles);
+            System.out.printf("Enter %d source files in format:\n"
+                    + "\t<Source file path relative to classpath>\n"
+                    + "Example:\n" + "\tgoo/buzz/Buzz.java\n", nFiles);
             for (int i = 0; i < nFiles; i++) {
-                String libName, libPath;
-                libName = sc.next();
-                libPath = sc.next();
-                File f = new File(libPath);
+                String libPath = sc.next();
+                File f = new File(swh.classpath + "/" + libPath);
+                String libName = libPath.replace('/', '.').
+                    substring(0, libPath.lastIndexOf(".java"));
                 swh.addLibraryFile(libName, f);
             }
             sc.close();

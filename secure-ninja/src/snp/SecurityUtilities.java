@@ -127,6 +127,8 @@ public class SecurityUtilities {
             return null;
         }
         
+        
+        //TODO
         System.out.println("Generating a SSL context");
         try {
             // generate sslcontext

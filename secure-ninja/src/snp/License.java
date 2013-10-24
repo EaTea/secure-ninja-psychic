@@ -74,7 +74,7 @@ public class License {
         return libraryName;
     }
 
-    public String getEncryptedLicense() {
+    public String getEncryptedLicenseString() {
         return encryptedLicense;
     }
 }

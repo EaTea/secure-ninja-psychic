@@ -1,11 +1,15 @@
 package snp;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.util.Arrays;
+import java.util.Map;
+import java.util.Scanner;
 
 import javax.tools.Diagnostic;
 import javax.tools.DiagnosticCollector;
@@ -14,30 +18,64 @@ import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
 import javax.tools.ToolProvider;
 import javax.tools.JavaCompiler.CompilationTask;
-import javax.tools.JavaFileObject.Kind;
 
 public class CompileUtility {
 
-    public static void main(String args[]) throws IOException {
-        JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-        DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<JavaFileObject>();
-
+    public static boolean compileDevAuth(File f, Map<String, String> licenses) {
+        Scanner sc = null;
+        try {
+            sc = new Scanner(f);
+        } catch (FileNotFoundException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+            return false;
+        }
+        
         StringWriter writer = new StringWriter();
-        PrintWriter out = new PrintWriter(writer);
-        out.println("public class HelloWorld {");
-        out.println("  public static void main(String args[]) {");
-        out.println("    System.out.println(\"This is in another java file\");");
-        out.println("  }");
-        out.println("}");
-        out.close();
-        JavaFileObject file = new JavaSourceFromString("HelloWorld", writer.toString());
+        while (sc.hasNextLine()) {
+            String s = sc.nextLine();
+            if (s.indexOf(""))
+            writer.write(s);
+        }
+        
+        String fileName = f.getName();
+        JavaFileObject file = new JavaSourceFromFile(fileName, writer.toString());
+        return compileJavaFileObject(file);
+    }
+    
+    public static boolean compile(File f) {
+        Scanner sc = null;
+        try {
+            sc = new Scanner(f);
+        } catch (FileNotFoundException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+            return false;
+        }
+        
+        StringWriter writer = new StringWriter();
+        while (sc.hasNextLine()) {
+            String s = sc.nextLine();
+            writer.write(s);
+        }
+        
+        String fileName = f.getName();
+        JavaFileObject file = new JavaSourceFromFile(fileName, writer.toString());
+        return compileJavaFileObject(file);
+    }
+
+    private static boolean compileJavaFileObject(JavaFileObject file) {
+        
+        DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<JavaFileObject>();
+        JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+        
 
         Iterable<? extends JavaFileObject> compilationUnits = Arrays.asList(file);
         CompilationTask task = compiler.getTask(null, null, diagnostics, null, null,
                 compilationUnits);
 
         boolean success = task.call();
-        for (Diagnostic diagnostic : diagnostics.getDiagnostics()) {
+        for (Diagnostic<?> diagnostic : diagnostics.getDiagnostics()) {
             System.out.println(diagnostic.getCode());
             System.out.println(diagnostic.getKind());
             System.out.println(diagnostic.getPosition());
@@ -47,30 +85,14 @@ public class CompileUtility {
             System.out.println(diagnostic.getMessage(null));
 
         }
-        System.out.println("Success: " + success);
-
-        if (success) {
-            try {
-                Class.forName("HelloWorld")
-                        .getDeclaredMethod("main", new Class[] { String[].class })
-                        .invoke(null, new Object[] { null });
-            } catch (ClassNotFoundException e) {
-                System.err.println("Class not found: " + e);
-            } catch (NoSuchMethodException e) {
-                System.err.println("No such method: " + e);
-            } catch (IllegalAccessException e) {
-                System.err.println("Illegal access: " + e);
-            } catch (InvocationTargetException e) {
-                System.err.println("Invocation target: " + e);
-            }
-        }
+        return success;
     }
 }
 
-class JavaSourceFromString extends SimpleJavaFileObject {
+class JavaSourceFromFile extends SimpleJavaFileObject {
     final String code;
 
-    JavaSourceFromString(String name, String code) {
+    JavaSourceFromFile(String name, String code) {
         super(URI.create("string:///" + name.replace('.', '/') + Kind.SOURCE.extension),
                 Kind.SOURCE);
         this.code = code;

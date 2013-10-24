@@ -10,6 +10,7 @@ public class FizzBuzz {
         }
         
         System.out.println("Yummy! Let the FizzleBuzzle-ing begin!");
+        FizzBuzzAuth.init();
         
         for (String s : args) {
             int k = Integer.parseInt(s);

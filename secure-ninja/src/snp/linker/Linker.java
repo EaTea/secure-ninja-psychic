@@ -105,7 +105,7 @@ public class Linker {
 
                 int count = 0;
 
-                if (nLicenses != -1) {
+                if (nLicenses > 0) {
                     for (int i = 0; i < nLicenses; i++) {
                         String swhIP = null, license = null;
                         int swhPort = -1;
@@ -210,7 +210,8 @@ public class Linker {
                             e.printStackTrace();
                         }
 
-                        if (nFiles != -1 && count == nFiles) {
+                        // TODO: remove temp.jar
+                        if (nFiles > 0 && count == nFiles) {
                             File jarFile = new File("temp.jar");
                             if (NetworkUtilities.writeFile(connection, jarFile)) {
                                 System.out.println("Sent JAR file successfully");
