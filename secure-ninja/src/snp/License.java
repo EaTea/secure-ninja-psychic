@@ -13,16 +13,11 @@ public class License {
     /**
      * 
      */
-    private String unencryptedLicenseString;
+    private String unencryptedLicense;
     /**
      * 
      */
     private String encryptedLicense;
-
-    /**
-     * 
-     */
-    private String developerID;
     /**
      * 
      */
@@ -34,8 +29,6 @@ public class License {
     /**
      * 
      */
-    private int numberLicenses;
-
     private int port;
 
     /**
@@ -45,19 +38,12 @@ public class License {
      * @param name
      * @param developerIP
      */
-    public License(String license, InetAddress swhIP, String name, String developerID,
-            int licenses, int port, String encrypted) {
-        this.unencryptedLicenseString = license;
+    public License(String license, InetAddress swhIP, String name, int port, String encrypted) {
+        this.unencryptedLicense = license;
         this.softwareHouseIP = swhIP;
         this.libraryName = name;
-        this.setDeveloperID(developerID);
-        this.numberLicenses = licenses;
         this.port = port;
         this.encryptedLicense = encrypted;
-    }
-
-    private void setPort(int port) {
-        this.port = port;
     }
 
     public int getPort() {
@@ -69,15 +55,7 @@ public class License {
      * @return
      */
     public String getLicenseString() {
-        return unencryptedLicenseString;
-    }
-
-    /**
-     * 
-     * @param licenseString
-     */
-    private void setLicenseString(String licenseString) {
-        this.unencryptedLicenseString = licenseString;
+        return unencryptedLicense;
     }
 
     /**
@@ -90,42 +68,10 @@ public class License {
 
     /**
      * 
-     * @param softwareHouseIP
-     */
-    private void setSoftwareHouseIP(InetAddress softwareHouseIP) {
-        this.softwareHouseIP = softwareHouseIP;
-    }
-
-    /**
-     * 
      * @return
      */
     public String getLibraryName() {
         return libraryName;
-    }
-
-    /**
-     * 
-     * @param libraryName
-     */
-    private void setLibraryName(String libraryName) {
-        this.libraryName = libraryName;
-    }
-
-    public String getDeveloperID() {
-        return developerID;
-    }
-
-    private void setDeveloperID(String developerID) {
-        this.developerID = developerID;
-    }
-
-    public int getNumberLicenses() {
-        return numberLicenses;
-    }
-
-    public void decrementNumberLicenses() {
-        numberLicenses--;
     }
 
     public String getEncryptedLicense() {
