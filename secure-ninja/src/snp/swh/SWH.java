@@ -24,6 +24,7 @@ import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLSocket;
 
+import snp.CompileUtility;
 import snp.License;
 import snp.NetworkUtilities;
 import snp.SecurityUtilities;
@@ -246,8 +247,16 @@ public class SWH {
                 License temp = clientLicenses.get(license);
                 String libraryName = temp.getLibraryName();
                 System.out.printf("License corresponds to library %s\n", libraryName);
+                
+                System.out.println("Compiling class file");
+                
+                CompileUtility.compileSWHFile(libraries.get(libraryName), libraryName, license);
+                
+                String classFilePath = libraryName.substring(libraryName.lastIndexOf('.')+1)
+                    + ".class";
+                File toWrite = new File(classFilePath);
     
-                if (NetworkUtilities.writeFile(connection, libraries.get(libraryName))) {
+                if (NetworkUtilities.writeFile(connection, toWrite, libraryName)) {
                     try {
                         if (inStream.readBoolean()) {
                             System.out.println("File sent successfully, removing license");
@@ -336,11 +345,6 @@ public class SWH {
         }
         
         SWH swh = null;
-//        System.out.println("Please Enter:\n" + "\t<Port> <keyFilePath> <Password>");
-        /*
-         * if (args.length < 4) { System.out.println("Usage:\n" +
-         * "requires one integer parameter for port\n"); return; }
-         */
         int portNumber = Integer.parseInt(args[0]);
         String keyFile = args[1];
         // String trustFile = sc.next();
@@ -366,13 +370,12 @@ public class SWH {
             int nFiles = sc.nextInt();
 
             System.out.printf("Enter %d source files in format:\n"
-                    + "\t<Source file path relative to classpath>\n"
-                    + "Example:\n" + "\tgoo/buzz/Buzz.java\n", nFiles);
+                    + "\t<fully qualified pathname>\n"
+                    + "Example:\n" + "\tgoo.buzz.Buzz\n", nFiles);
             for (int i = 0; i < nFiles; i++) {
-                String libPath = sc.next();
+                String libName = sc.next();
+                String libPath = libName.replace('.', '/') + ".java";
                 File f = new File(swh.classpath + "/" + libPath);
-                String libName = libPath.replace('/', '.').
-                    substring(0, libPath.lastIndexOf(".java"));
                 swh.addLibraryFile(libName, f);
             }
             sc.close();
