@@ -23,37 +23,41 @@ import snp.NetworkUtilities;
 import snp.SecurityUtilities;
 
 /**
- * Our linkBroker implementation.
- * It packages java .class files into JAR when requested by developer.
+ * Our LinkBroker software agent.
+ * It packages Java .class files into JAR when requested by developer.
  * @author Edwin Tay(20529864) & Wan Ying Goh(20784663)
  * @version Oct 2013
  */
 public class Linker {
 
     /**
-     * 
+     * Provides SSLServerSockets for future usage --- should be initialised with a key store so that
+     * this agent can prove their trustworthiness to clients.
      */
     private SSLServerSocketFactory sslServFact;
 
     /**
-     * 
+     * The server connection that this agent uses to communicate with Developers.
      */
     private SSLServerSocket serverConnection;
 
     /**
-     * 
+     * The SSLSocketFactory which provides SSLSockets for contacting SoftwareHouses.
+     * Note that it should be initialised with a trust store so that "registered" software houses
+     * can be contacted for linking.
      */
     private SSLSocketFactory sslFact;
 
     /**
      * Linker's constructor.
-     * @param portNumber the port the linker server used
-     * @param keyFile
-     * @param keyStorePW
-     * @param trustFile
-     * @param trustStorePW
-     * @throws UnknownHostException
-     * @throws IOException
+     * @param portNumber the port the linker server's ServerSocket listens on
+     * @param keyFile the relative path to the keystore
+     * @param keyStorePW the password to access the keystore specified by keyfile; note that every
+     *  keypair in the keystore is expected to have the same password.
+     * @param trustFile the relative path to the truststore
+     * @param trustStorePW the password to access the truststore specified by trustfile
+     * @throws UnknownHostException if this host canont be determined
+     * @throws IOException if an I/O error occurs
      */
     public Linker(int portNumber, String keyFile, String keyStorePW, String trustFile, String trustStorePW)
             throws UnknownHostException, IOException {
@@ -90,15 +94,24 @@ public class Linker {
                     e.printStackTrace();
                 }
             }
+            
+            // note that it is possible for the temporary JAR to be left behind --- we ought to
+            // clean up the temporary file that is left behind
             File tempJar = new File("temp.jar");
             if (tempJar.exists()) {
+                Log.log("Performing cleanup");
                 tempJar.delete();
             }
         }
     }
 
     /**
+     * Packages the JAR file as requested by the remote host of the SSLSocket.
+     * This method will open up connections to contact Software Houses and ask for license
+     * verification and library providing.
      * 
+     * If the JAR cannot successfully be packaged, the Linker will attempt to provide as much
+     * information as possible to the Developer to explain what went wrong.
      * @param connection socket connecting to developer
      */
     private void packageJarFile(SSLSocket connection) {
@@ -106,6 +119,7 @@ public class Linker {
         DataOutputStream outStream = NetworkUtilities.getDataOutputStream(connection);
 
         if (inStream != null && outStream != null) {
+            // JAR Creation: specify manifest
             JarOutputStream jarOut = null;
             Manifest manifest = null;
             try {
@@ -114,18 +128,16 @@ public class Linker {
                 manifest.getMainAttributes().put(Attributes.Name.CLASS_PATH, ".");
 
                 String mainFile = inStream.readUTF();
-//                mainFile = mainFile.replaceAll("/", ".").substring(0,
-//                        mainFile.lastIndexOf(".java"));
                 manifest.getMainAttributes().put(Attributes.Name.MAIN_CLASS, mainFile);
 
                 Log.log("main-point: " + mainFile);
 
                 jarOut = new JarOutputStream(new FileOutputStream("temp.jar"), manifest);
             } catch (FileNotFoundException e1) {
-                Log.error("could not create temp.jar");
+                Log.error("Could not create temp.jar");
                 e1.printStackTrace();
             } catch (IOException e1) {
-                Log.error("I/O error whilst constructing " + "JarOutputStream");
+                Log.error("I/O error whilst constructing JarOutputStream");
                 e1.printStackTrace();
             }
 
@@ -143,9 +155,18 @@ public class Linker {
                 int count = 0;
 
                 if (nLicenses > 0) {
+                    // read and verify each license
                     for (int i = 0; i < nLicenses; i++) {
                         String swhIP = null, license = null;
                         int swhPort = -1;
+                        // here, we ask the developer to tell us the SWH to contact
+                        // this seems sensible, since a SWH might provide multiple libraries
+                        // or a library MAY be provided by multiple software houses
+                        //
+                        // if the approach used DNS to resolve the IP to send to, perhaps this would
+                        // be mitigated and seem more sensible?
+                        // we also note that the port number would usually be a range of numbers
+                        // that the SWH and Linker agree to use beforehand.
                         try {
                             swhIP = inStream.readUTF();
                             swhPort = inStream.readInt();
@@ -172,6 +193,8 @@ public class Linker {
                                 swhOut.writeUTF(license);
                                 swhOut.writeUTF(connection.getInetAddress().getCanonicalHostName());
                                 
+                                // writes success code to the Dev and SWH to inform them of the
+                                // result and ACK the response resp.
                                 int success = swhIn.readInt();
                                 outStream.writeInt(success);
                                 swhOut.writeInt(success);
@@ -227,6 +250,7 @@ public class Linker {
                             count = 0;
 
                             for (int i = 0; i < nFiles; i++) {
+                                // reading a file and intending to treat it as a JAREntry
                                 if (NetworkUtilities.readFile(connection, jarOut, true)) {
                                     count++;
                                 } else {
@@ -258,8 +282,7 @@ public class Linker {
                             if (jarFile.delete()) {
                                 Log.log("Successfully deleted temp.jar");
                             } else {
-                                Log.log("Something went wrong,"
-                                        + " could not delete temp.jar");
+                                Log.error("Could not delete temp.jar");
                             }
                         }
                     } else {

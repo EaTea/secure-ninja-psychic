@@ -13,6 +13,9 @@ public class Fizz {
     }
 
     private static boolean verify(String authString) {
+        // a method to determine if methods in Fizz can be used
+        // we envisage every method in Fizz having a parameter for authString, and calling verify
+        // to ensure that the provided authString is legitimate
         return LICENSE_STRING.equals(authString);
     }
 }

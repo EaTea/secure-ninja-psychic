@@ -18,7 +18,7 @@ import javax.tools.ToolProvider;
 import javax.tools.JavaCompiler.CompilationTask;
 
 /**
- * Utility for in memory compilation.
+ * Provides static methods for in-memory compilation.
  * Code derived from http://www.java2s.com/Code/Java/JDK-6/CompilingfromMemory.htm
  * @author Edwin Tay(20529864) && Wan Ying Goh(20784663)
  * @version Oct 2013
@@ -26,32 +26,33 @@ import javax.tools.JavaCompiler.CompilationTask;
 public class CompileUtility {
 
     /**
-     * The regex pattern for where to put licenses.
+     * The regex pattern for the expected position for where to put licenses within source code.
      */
     private static final String LICENSE_PATTERN = "\\s*[/*].*LICENSE.*[*/]\\s*";
     
     /**
-     * The regex pattern for where to put password.
+     * The regex pattern for the expected position for where to put passwords within source code.
      */
     private static final String PASSWORD_PATTERN = "\\s*[/*].*PASSWORD.*[*/]\\s*";
 
     /**
      * Compiling a softwareHouse file. The compilation will protect the resulting classfile
-     * if provided a license.
-     * @param f the file to be compiled.
+     * if provided a license. Note that the resulting class file is produced in the same directory
+     * which the calling class is running in.
+     * @param file the file to be compiled.
      * @param className the fully qualified classname
      * @param license the license used to protect class file
      * @return true if compilation is successful, false otherwise. False will be returned if license provided is null.
      */
-    public static boolean compileSWHFile(File f, String className, String license) {
+    public static boolean compileSWHFile(File file, String className, String license) {
         if(license == null) {
             return false;
         }
         Scanner sc = null;
         try {
-            sc = new Scanner(f);
+            sc = new Scanner(file);
         } catch (FileNotFoundException e) {
-            Log.error("Could not find file: %s", f.getAbsolutePath());
+            Log.error("Could not find file: %s", file.getAbsolutePath());
             e.printStackTrace();
             return false;
         }
@@ -68,32 +69,33 @@ public class CompileUtility {
             }
         }
         
-        JavaFileObject file = new JavaSourceFromFile(className, writer.toString());
+        JavaFileObject srcFile = new JavaSourceFromFile(className, writer.toString());
         sc.close();
-        return compileJavaFileObject(file);
+        return compileJavaFileObject(srcFile);
     }
 
     /**
      * Compiling a developer file. The compilation will protect the resulting classfile
-     * if provided a license.
-     * @param f the file to be compiled.
+     * if provided a license. Note that the resulting class file is produced in the same directory
+     * which the calling class is running in.
+     * @param file the file to be compiled.
      * @param className the fully qualified classname
      * @param license the license used to protect class file
      * @param licenses a map of library to licenses used to protect the class files
      * @param password the password used to protect program
      * @return true if compilation is successful, false otherwise. False will be returned if parameters provided are null.
      */
-    public static boolean compileDevFile(File f, String className, Map<String, String> licenses,
+    public static boolean compileDevFile(File file, String className, Map<String, String> licenses,
             String password) {
         if(password == null || licenses == null) {
             return false;
         }
         Scanner sc = null;
-        System.err.println(f.getAbsolutePath());
+        System.err.println(file.getAbsolutePath());
         try {
-            sc = new Scanner(f);
+            sc = new Scanner(file);
         } catch (FileNotFoundException e) {
-            Log.error("Could not find file: %s", f.getAbsolutePath());
+            Log.error("Could not find file: %s", file.getAbsolutePath());
             e.printStackTrace();
             return false;
         }
@@ -117,9 +119,9 @@ public class CompileUtility {
             }
         }
         
-        JavaFileObject file = new JavaSourceFromFile(className, writer.toString());
+        JavaFileObject srcFile = new JavaSourceFromFile(className, writer.toString());
         sc.close();
-        return compileJavaFileObject(file);
+        return compileJavaFileObject(srcFile);
     }
 
     /**
@@ -155,7 +157,7 @@ public class CompileUtility {
     }
 
     /**
-     * A representation of a java source file object.
+     * A representation of a Java source file object.
      */
     private static class JavaSourceFromFile extends SimpleJavaFileObject {
         private final String code;

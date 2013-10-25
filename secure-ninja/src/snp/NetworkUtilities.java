@@ -23,7 +23,6 @@ public class NetworkUtilities {
     private final static char[] hexArray = "0123456789ABCDEF".toCharArray();
 
     /**
-     * Get DataInputStream from the specified socket.
      * @param connection the connected socket
      * @return DataInputStream associated with the specified socket. Null if it is unsuccessful.
      */
@@ -41,7 +40,6 @@ public class NetworkUtilities {
     }
 
     /**
-     * Get DataOutputStream from the specified socket.
      * @param connection the connected socket
      * @return DataOutputStream associated with the specified socket. Null if it is unsuccessful.
      */
@@ -61,7 +59,7 @@ public class NetworkUtilities {
     /**
      * Close the DateInputStream associated with the specified socket.
      * @param inStream the datatInputStream to be closed
-     * @param connection the connected socket
+     * @param connection the connected socket, for debugging/logging purposes
      */
     public static void closeSocketDataInputStream(DataInputStream inStream, SSLSocket connection) {
         try {
@@ -78,7 +76,7 @@ public class NetworkUtilities {
     /**
      * Close the DateOutputStream associated with the specified socket.
      * @param outStream the datatOutputStream to be closed.
-     * @param connection the connected socket
+     * @param connection the connected socket, for debugging/logging purposes
      */
     public static void closeSocketDataOutputStream(DataOutputStream outStream, SSLSocket connection) {
         try {
@@ -110,6 +108,8 @@ public class NetworkUtilities {
                 Log.log("Length: " + fileLength);
                 String filePath = inStream.readUTF();
                 Log.log("File path: " + filePath);
+                // NOTE: filepath is always written, regardless of usage, and though this is a
+                // little wasteful it doesn't reveal any new information
 
                 if (isJAREntry) {
                     // Note: filePath separators may need to change
@@ -150,6 +150,9 @@ public class NetworkUtilities {
                 long fileSize = f.length();
                 outStream.writeLong(fileSize);
                 Log.log("Length: " + fileSize);
+                // writes the fully qualified filename as a classname
+                // most of the time, we are writing a Java class file into a JAREntry and it is
+                // necessay to note what the directory structure of the JAR is
                 String path = name.replace('.', '/') + ".class";
                 outStream.writeUTF(path);
                 Log.log("File path: " + path);

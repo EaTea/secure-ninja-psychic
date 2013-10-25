@@ -13,6 +13,9 @@ public class Buzz {
     }
 
     private static boolean verify(String authString) {
+        // a method to determine if methods in Buzz can be used
+        // we envisage every method in Buzz having a parameter for authString, and calling verify
+        // to ensure that the provided authString is legitimate
         return LICENSE_STRING.equals(authString);
     }
 }

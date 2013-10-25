@@ -30,26 +30,62 @@ import snp.License;
 import snp.Log;
 import snp.NetworkUtilities;
 import snp.SecurityUtilities;
-
+/**
+ * Our implementation of the Software House (SWH).
+ * SWH provides functionality for requesting licenses and verifying licenses + sending libraries.
+ * @author Edwin Tay(20529864) & Wan Ying Goh(20784663)
+ *
+ */
 public class SWH {
 
-    private String classpath;
+    /**
+     * The path to the top level of all the Java source code this SWH is responsible for.
+     */
+    private String srcPath;
 
+    /**
+     * A map from license strings to licenses.
+     */
     private Map<String, License> clientLicenses;
 
+    /**
+     * A map of libraries to source files.
+     */
     private Map<String, File> libraries;
 
+    /**
+     * Provides SSLServerSockets for future usage --- should be initialised with a key store so that
+     * this agent can prove their trustworthiness to Linkers and Devs.
+     */
     private SSLServerSocketFactory sslservfact;
 
+
+    /**
+     * The server connection that this agent uses to communicate with Developers.
+     * In future, it might have been nice to use SocketChannels to open multiple, asynchronous
+     * communication channels and select on the appropriate one.
+     */
     private SSLServerSocket serverConnection;
 
+    /**
+     * KeyPair used for SWH asymmetric encryption and decryption of licenses.
+     * Note: En/decrypting didn't really need to be asymmetric if it was all done with a secret that
+     * only the software house knew.
+     * In light of this, it might have been a weakness/inefficiency to choose asymmetric encryption.
+     */
     private KeyPair myKey;
 
+    /**
+     * key size for asymmetric encryption keys.
+     */
     private static final int keySize = 2048;
 
+    /**
+     * algorithm name for encryption.
+     */
     private static final String algo = "RSA";
 
-    public SWH(String classpath, int serverPort, String keyFile, String password)
+    public SWH(String srcPath, int serverPort, String keyFile, String password)
             throws UnknownHostException, IOException, NoSuchAlgorithmException {
         clientLicenses = new HashMap<String, License>();
         libraries = new HashMap<String, File>();
@@ -63,15 +99,20 @@ public class SWH {
         keyGen.initialize(keySize);
         myKey = keyGen.genKeyPair();
 
-        this.classpath = classpath;
-        if (classpath.endsWith("/")) {
-            classpath = classpath.substring(0, classpath.length() - 2);
+        this.srcPath = srcPath;
+        if (srcPath.endsWith("/")) {
+            srcPath = srcPath.substring(0, srcPath.length() - 2);
         }
         Log.log("Created a new SoftwareHouse at "
                 + serverConnection.getInetAddress().getCanonicalHostName() + ":"
                 + serverConnection.getLocalPort());
     }
 
+    /**
+     * Listens for, and calls the appropriate commands, depending upon the requests that are given
+     * to the SWH.
+     * @throws IOException
+     */
     private void listenForCommands() throws IOException {
         SSLSocket connection = null;
         do {
@@ -118,10 +159,18 @@ public class SWH {
         } while (true);
     }
 
-    private void addLibraryFile(String libName, File f) {
-        libraries.put(libName, f);
+    /**
+     * @param libName
+     * @param srcFile the source file for the associated library
+     */
+    private void addLibraryFile(String libName, File srcFile) {
+        libraries.put(libName, srcFile);
     }
 
+    /**
+     * generates licenses for the remote host of connection
+     * @param connection
+     */
     private void generateLicenses(SSLSocket connection) {
         DataInputStream inStream = NetworkUtilities.getDataInputStream(connection);
         DataOutputStream outStream = NetworkUtilities.getDataOutputStream(connection);
@@ -153,6 +202,8 @@ public class SWH {
                     outStream.writeInt(numLicenses);
 
                     for (int i = 0; i < numLicenses; i++) {
+                        // construct a license based on some attributes, plus a salt from
+                        // Math.random()
                         String s = libName + i + System.currentTimeMillis() + Math.random();
                         MessageDigest md = MessageDigest.getInstance("MD5");
 
@@ -194,10 +245,20 @@ public class SWH {
         }
     }
 
+    /**
+     * Adds a license to client licenses
+     * @param licenseString
+     * @param l
+     */
     private void addLicense(String licenseString, License l) {
         clientLicenses.put(licenseString, l);
     }
 
+    /**
+     * 
+     * @param license
+     * @return the licnese or null
+     */
     private License getLicense(String license) {
         if (clientLicenses.containsKey(license)) {
             return clientLicenses.get(license);
@@ -205,6 +266,10 @@ public class SWH {
         return null;
     }
 
+    /**
+     * Verifies that the license provided by acceptLicenses is okay.
+     * @param connection
+     */
     private void acceptLicenses(SSLSocket connection) {
         DataInputStream inStream = NetworkUtilities.getDataInputStream(connection);
         DataOutputStream outStream = NetworkUtilities.getDataOutputStream(connection);
@@ -234,13 +299,8 @@ public class SWH {
                         .compileSWHFile(libraries.get(libraryName), libraryName, license)) {
                     Log.error("Could not compile " + libraryName);
 
-                    // In this situation, the more sensible thing to do is to tell developer that
-                    // the problem is compilation on our end.
-                    // In this case, it is a slight shortcut that just tells the Developer that
-                    // there was a problem encountered with linking.
                     Log.log("Informing linker that our services are down");
                     
-
                     try {
                         outStream.writeInt(-2);
                     } catch (IOException e) {
@@ -301,6 +361,11 @@ public class SWH {
         Log.logEnd();
     }
 
+    /**
+     * 
+     * @param license
+     * @return the unwrapped (decrypted) license or null
+     */
     private String unwrapLicense(String license) {
         // Decrypt license string using our own private key
         PrivateKey privKey = myKey.getPrivate();
@@ -331,6 +396,10 @@ public class SWH {
         return null;
     }
 
+    /**
+     * @param license
+     * @return true if the license can be found in clientLicenses, and false otherwise
+     */
     private boolean verifyLicense(String license) {
         License temp = getLicense(license);
         if (temp != null) {
@@ -344,6 +413,11 @@ public class SWH {
         clientLicenses.remove(license);
     }
 
+    /**
+     * @param license
+     * @param pubKey
+     * @return the wrapped (encrypted) license using the public key or null
+     */
     private String wrapLicense(String license, PublicKey pubKey) {
         if (pubKey == null) {
             System.out.println("Null PublicKey received");
@@ -415,7 +489,7 @@ public class SWH {
             for (int i = 0; i < nFiles; i++) {
                 String libName = sc.next();
                 String libPath = libName.replace('.', '/') + ".java";
-                File f = new File(swh.classpath + "/" + libPath);
+                File f = new File(swh.srcPath + "/" + libPath);
                 swh.addLibraryFile(libName, f);
             }
             sc.close();

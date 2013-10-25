@@ -2,7 +2,10 @@ package snp;
 
 /**
  * Our logging class.
- * Note: a more secure logging system would use a proper logging library instead of std io.
+ * Note: a more secure logging system would use a proper logging library instead of stdout and
+ * stderr.
+ * We provide a simple logging system for convenience, but also to note how this should be designed
+ * in a larger, real-world application.
  * @author Edwin Tay(20529864) && Wan Ying Goh(20784663)
  * @version Oct 2013
  */
