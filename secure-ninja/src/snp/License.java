@@ -4,7 +4,6 @@
 package snp;
 
 import java.net.InetAddress;
-import java.security.PublicKey;
 
 
 /**
@@ -36,51 +35,50 @@ public class License {
 
     /**
      * License's constructor.
-     * @param license the licenseKey of the 
-     * @param swhIP
-     * @param name
-     * @param port
-     * @param unencrypted
+     * @param license the licenseKey
+     * @param swhIP the IP of the issuing SWH
+     * @param name libraryName associated with the license
+     * @param port the port number used SWH's server
+     * @param enrypted the encrypted license key
      */
-    public License(String license, InetAddress swhIP, String name, int port, String unencrypted) {
+    public License(String license, InetAddress swhIP, String name, int port, String enrypted) {
         this.unencryptedLicense = license;
         this.softwareHouseIP = swhIP;
         this.libraryName = name;
         this.port = port;
-        this.encryptedLicense = unencrypted;
+        this.encryptedLicense = enrypted;
     }
 
+    /**
+     * @return the port number used by SWH's server.
+     */
     public int getPort() {
         return port;
     }
 
     /**
-     * 
-     * @return
+     * @return the license key
      */
     public String getLicenseString() {
         return unencryptedLicense;
     }
 
     /**
-     * 
-     * @return
+     * @return the IP of the issuing SWH.
      */
     public InetAddress getSoftwareHouseIP() {
         return softwareHouseIP;
     }
 
     /**
-     * 
-     * @return
+     * @return the libraryName associated with the license
      */
     public String getLibraryName() {
         return libraryName;
     }
 
     /**
-     * 
-     * @return
+     * @return the encrypted license key
      */
     public String getEncryptedLicenseString() {
         return encryptedLicense;
