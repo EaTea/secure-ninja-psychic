@@ -12,6 +12,7 @@ import java.security.KeyPairGenerator;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
@@ -143,21 +144,6 @@ public class SWH {
 
             if (numLicenses > 0 && libName != null && libraries.containsKey(libName)) {
                 try {
-                    Log.log("Sending my public key to developer");
-                    byte[] keyBytes = myKey.getPublic().getEncoded();
-                    outStream.writeUTF(algo);
-                    outStream.writeInt(keyBytes.length);
-                    outStream.write(keyBytes);
-                    Log.log((NetworkUtilities.bytesToHex(keyBytes)));
-                    if (!inStream.readBoolean()) {
-                        Log.log("Receiving my public key by developer failed");
-                        NetworkUtilities.closeSocketDataInputStream(inStream, connection);
-                        NetworkUtilities.closeSocketDataOutputStream(outStream, connection);
-
-                        Log.logEnd();
-                        return;
-                    }
-
                     Log.log("Generating licenses for "
                             + connection.getInetAddress().getCanonicalHostName() + ":"
                             + connection.getPort());
@@ -171,20 +157,12 @@ public class SWH {
                         // Better approach would be to use character encodings.
                         String license = NetworkUtilities.bytesToHex(md.digest(s.getBytes()));
                         outStream.writeUTF(license);
-                        // Developer told us that they cant encrypt our license
-                        // with our public key
-                        if (!inStream.readBoolean()) {
-                            Log.log("Developer unable to "
-                                    + "encrypt our license with our key, exiting");
-                            NetworkUtilities.closeSocketDataInputStream(inStream, connection);
-                            NetworkUtilities.closeSocketDataOutputStream(outStream, connection);
 
-                            Log.logEnd();
-                            return;
-                        }
+                        String unencrypted = wrapLicense(license, myKey.getPublic());
+                        outStream.writeUTF(unencrypted);
+                        
                         addLicense(license, new License(license, InetAddress.getLocalHost(),
-                                libName, connection.getLocalPort(), null
-                        /* SWH doesnt need to store encrypted license */));
+                                libName, connection.getLocalPort(), unencrypted));
                     }
                 } catch (IOException e) {
                     Log.error("encountered I/O error whilst " + "generating licenses");
@@ -328,6 +306,38 @@ public class SWH {
         clientLicenses.remove(license);
     }
 
+    private String wrapLicense(String license, PublicKey pubKey) {
+        if (pubKey == null) {
+            System.out.println("Null PublicKey received");
+            return null;
+        }
+        // Encrypt a license with a SWH public key using asymmetric key
+        // encryption
+        try {
+            Cipher cipher = Cipher.getInstance("RSA");
+            cipher.init(Cipher.ENCRYPT_MODE, pubKey);
+            byte[] encrypted = cipher.doFinal(NetworkUtilities.hexStringToByteArray(license));
+            String encryptedLicense = NetworkUtilities.bytesToHex(encrypted);
+            return encryptedLicense;
+        } catch (NoSuchAlgorithmException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (NoSuchPaddingException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (InvalidKeyException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (IllegalBlockSizeException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (BadPaddingException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        return null;
+    }
+
     public static void main(String[] args) throws IOException {
         if (args.length != 4) {
             System.err.println("Usage: needs 3 arguments.");
@@ -359,11 +369,10 @@ public class SWH {
         }
         if (swh != null) {
             Scanner sc = new Scanner(System.in);
-            Log.log("How many files is this SoftwareHouse responsible for?");
+            System.out.println("How many files is this SoftwareHouse responsible for?");
             int nFiles = sc.nextInt();
 
-            System.out
-                    .printf("Enter %d source files in format:\n" + "\t<fully qualified pathname>\n"
+            System.out.printf("Enter %d source files in format:\n" + "\t<fully qualified pathname>\n"
                             + "Example:\n" + "\tgoo.buzz.Buzz\n", nFiles);
             for (int i = 0; i < nFiles; i++) {
                 String libName = sc.next();
