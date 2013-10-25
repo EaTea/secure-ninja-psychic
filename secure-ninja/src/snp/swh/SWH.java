@@ -53,13 +53,16 @@ public class SWH {
             throws UnknownHostException, IOException, NoSuchAlgorithmException {
         clientLicenses = new HashMap<String, License>();
         libraries = new HashMap<String, File>();
+
         sslservfact = (SSLServerSocketFactory) SecurityUtilities.getSSLServerSocketFactory(keyFile,
                 password);
         serverConnection = (SSLServerSocket) sslservfact.createServerSocket(serverPort, 0,
                 InetAddress.getLocalHost());
+
         KeyPairGenerator keyGen = KeyPairGenerator.getInstance(algo);
         keyGen.initialize(keySize);
         myKey = keyGen.genKeyPair();
+
         this.classpath = classpath;
         if (classpath.endsWith("/")) {
             classpath = classpath.substring(0, classpath.length() - 2);
@@ -160,7 +163,7 @@ public class SWH {
 
                         String unencrypted = wrapLicense(license, myKey.getPublic());
                         outStream.writeUTF(unencrypted);
-                        
+
                         addLicense(license, new License(license, InetAddress.getLocalHost(),
                                 libName, connection.getLocalPort(), unencrypted));
                     }
@@ -204,6 +207,8 @@ public class SWH {
 
     private void acceptLicenses(SSLSocket connection) {
         DataInputStream inStream = NetworkUtilities.getDataInputStream(connection);
+        DataOutputStream outStream = NetworkUtilities.getDataOutputStream(connection);
+        
         if (inStream != null) {
             Log.log("Checking if license is legitimate");
             String license = null, developerID = null;
@@ -224,32 +229,65 @@ public class SWH {
 
                 Log.log("Compiling class file");
 
-                CompileUtility.compileSWHFile(libraries.get(libraryName), libraryName, license);
+                
+                if (!CompileUtility
+                        .compileSWHFile(libraries.get(libraryName), libraryName, license)) {
+                    Log.error("Could not compile " + libraryName);
 
-                String classFilePath = libraryName.substring(libraryName.lastIndexOf('.') + 1)
-                        + ".class";
-                File toWrite = new File(classFilePath);
+                    // In this situation, the more sensible thing to do is to tell developer that
+                    // the problem is compilation on our end.
+                    // In this case, it is a slight shortcut that just tells the Developer that
+                    // there was a problem encountered with linking.
+                    Log.log("Informing linker that our services are down");
+                    
 
-                if (NetworkUtilities.writeFile(connection, toWrite, libraryName)) {
                     try {
-                        if (inStream.readBoolean()) {
+                        outStream.writeInt(-2);
+                    } catch (IOException e) {
+                        Log.error("encountered I/O error whilst sending rejection to Linker");
+                        e.printStackTrace();
+                    }
+                    
+                    NetworkUtilities.closeSocketDataOutputStream(outStream, connection);
+                }
+
+                // libraryName is a fully qualified classname, e.g. goo.buzz.Buzz
+                // therefore, classFilePath is the unqualified className (Buzz) and the ".class"
+                // extension.
+                String classFilePath = libraryName.substring(libraryName.lastIndexOf('.') + 1)
+                + ".class";
+                File toWrite = new File(classFilePath);
+                try {
+                    outStream.writeInt(0);
+                } catch(IOException e) {
+                    Log.error("Error: encountered I/O error during confirmation of license verification");
+                    e.printStackTrace();
+                }
+                
+                if (toWrite.exists() && NetworkUtilities.writeFile(connection, toWrite, libraryName)) {
+                    try {
+                        if (inStream.readInt() == 0) {
                             Log.log("File sent successfully, removing license");
                             decrementLicense(license);
                         } else {
-                            System.err.println("Something went wrong on the" + " linker's end");
+                            Log.log("Something went wrong on the linker's end");
+                            // N.B.: it would be nice to have some kind of resend protocol here
+                            // however, we were constrained on time and decided  to focus on other
+                            // aspects of the project
                         }
                     } catch (IOException e) {
-                        System.err
-                                .println("Error: encountered I/O error during" + " file transfer");
+                        Log.error("Error: encountered I/O error during file transfer");
                         e.printStackTrace();
                     }
+                    
+                    Log.log("Deleting generated class file");
+                    toWrite.delete();
                 }
             } else {
-                Log.log("Could not verify license, sending" + " rejection to Linker");
-                DataOutputStream outStream = NetworkUtilities.getDataOutputStream(connection);
-
+                Log.log("Could not verify license, sending rejection to Linker");
+               
                 try {
-                    outStream.writeLong(-1);
+                    outStream.writeInt(-1);
                 } catch (IOException e) {
                     Log.error("encountered I/O error whilst " + "sending rejection to Linker");
                     e.printStackTrace();
@@ -275,19 +313,19 @@ public class SWH {
             String decryptedLicense = NetworkUtilities.bytesToHex(decrypted);
             return decryptedLicense;
         } catch (NoSuchAlgorithmException e) {
-            // TODO Auto-generated catch block
+            Log.error("Could not find Cipher instance for RSA");
             e.printStackTrace();
         } catch (NoSuchPaddingException e) {
-            // TODO Auto-generated catch block
+            Log.error("Could not find generate padding");
             e.printStackTrace();
         } catch (InvalidKeyException e) {
-            // TODO Auto-generated catch block
+            Log.error("Provided public key was invalid");
             e.printStackTrace();
         } catch (IllegalBlockSizeException e) {
-            // TODO Auto-generated catch block
+            Log.error("Data block provided for encryption was too big");
             e.printStackTrace();
         } catch (BadPaddingException e) {
-            // TODO Auto-generated catch block
+            Log.error("Could not generate padding");
             e.printStackTrace();
         }
         return null;
@@ -320,19 +358,19 @@ public class SWH {
             String encryptedLicense = NetworkUtilities.bytesToHex(encrypted);
             return encryptedLicense;
         } catch (NoSuchAlgorithmException e) {
-            // TODO Auto-generated catch block
+            Log.error("Could not find Cipher instance for RSA");
             e.printStackTrace();
         } catch (NoSuchPaddingException e) {
-            // TODO Auto-generated catch block
+            Log.error("Could not find generate padding");
             e.printStackTrace();
         } catch (InvalidKeyException e) {
-            // TODO Auto-generated catch block
+            Log.error("Provided public key was invalid");
             e.printStackTrace();
         } catch (IllegalBlockSizeException e) {
-            // TODO Auto-generated catch block
+            Log.error("Data block provided for encryption was too big");
             e.printStackTrace();
         } catch (BadPaddingException e) {
-            // TODO Auto-generated catch block
+            Log.error("Could not generate padding");
             e.printStackTrace();
         }
         return null;
@@ -340,7 +378,7 @@ public class SWH {
 
     public static void main(String[] args) throws IOException {
         if (args.length != 4) {
-            System.err.println("Usage: needs 3 arguments.");
+            System.err.println("Usage: needs 4 arguments.");
             System.err.println("\tArgument 1 = port number");
             System.err.println("\tArgument 2 = keystore filepath");
             System.err.println("\tArgument 3 = keystore password");
@@ -355,7 +393,6 @@ public class SWH {
         String password = args[2];
         String classpath = args[3];
         try {
-            // TODO
             swh = new SWH(classpath, portNumber, keyFile, password);
         } catch (UnknownHostException e) {
             Log.error("Host name could not be resolved; exiting");
@@ -364,7 +401,7 @@ public class SWH {
             Log.error("An IO error occurred during ServerSocket initialisation; " + "exiting");
             e.printStackTrace();
         } catch (NoSuchAlgorithmException e) {
-            // TODO Auto-generated catch block
+            Log.error("Could not get algorithm during RSA construction");
             e.printStackTrace();
         }
         if (swh != null) {
@@ -372,7 +409,8 @@ public class SWH {
             System.out.println("How many files is this SoftwareHouse responsible for?");
             int nFiles = sc.nextInt();
 
-            System.out.printf("Enter %d source files in format:\n" + "\t<fully qualified pathname>\n"
+            System.out
+                    .printf("Enter %d source files in format:\n" + "\t<fully qualified pathname>\n"
                             + "Example:\n" + "\tgoo.buzz.Buzz\n", nFiles);
             for (int i = 0; i < nFiles; i++) {
                 String libName = sc.next();
