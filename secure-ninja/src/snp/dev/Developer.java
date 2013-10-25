@@ -327,7 +327,7 @@ public class Developer {
                 count = -1;
             }
 
-            if (count > 0) {
+            if (count != 0) {
                 for (License lic : requestedLicenses) {
                     try {
                         Log.log("Writing license to network");
