@@ -159,22 +159,23 @@ public class Linker {
                                 swhCon = (SSLSocket) sslFact.createSocket(swhIP, swhPort);
                                 DataOutputStream swhOut = NetworkUtilities
                                         .getDataOutputStream(swhCon);
+                                DataInputStream swhIn = NetworkUtilities.getDataInputStream(swhCon);
 
                                 // tell SWH that request is for license verify
                                 swhOut.writeUTF("VER");
 
                                 swhOut.writeUTF(license);
                                 swhOut.writeUTF(connection.getInetAddress().getCanonicalHostName());
+                                
+                                int success = swhIn.readInt();
+                                outStream.writeInt(success);
+                                swhOut.writeInt(success);
 
-                                if (NetworkUtilities.readFile(swhCon, jarOut, true)) {
+                                if (success == 0 && NetworkUtilities.readFile(swhCon, jarOut, true)) {
                                     Log.log("Successfully read file");
                                     Log.log("Notifying SWH and Dev");
-                                    outStream.writeBoolean(true);
-                                    swhOut.writeBoolean(true);
                                     count++;
                                 } else {
-                                    outStream.writeBoolean(false);
-                                    swhOut.writeBoolean(false);
                                     swhCon.close();
                                     jarOut.close();
                                     break;
@@ -191,8 +192,7 @@ public class Linker {
                         } else {
                             try {
                                 // could not read license information
-                                Log.log("License information could"
-                                        + " not be read --- exiting");
+                                Log.log("License information could not be read --- exiting");
                                 outStream.writeBoolean(false);
                                 count = -1;
                                 break;
@@ -313,6 +313,10 @@ public class Linker {
         }
         if (link != null) {
             link.processRequests();
+            File tempJar = new File("temp.jar");
+            if (tempJar.exists()) {
+                tempJar.delete();
+            }
         }
         sc.close();
     }
