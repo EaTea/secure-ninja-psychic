@@ -18,6 +18,7 @@ import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLServerSocket;
 
+import snp.Log;
 import snp.NetworkUtilities;
 import snp.SecurityUtilities;
 
@@ -55,13 +56,13 @@ public class Linker {
      */
     public Linker(int portNumber, String keyFile, String keyStorePW, String trustFile, String trustStorePW)
             throws UnknownHostException, IOException {
-        System.out.printf("Creating new LinkBroker at %s:%d\n", InetAddress.getLocalHost()
-                .getCanonicalHostName(), portNumber);
         sslFact = (SSLSocketFactory) SecurityUtilities.getSSLSocketFactory(trustFile, trustStorePW);
         sslServFact = (SSLServerSocketFactory) SecurityUtilities.getSSLServerSocketFactory(
                 keyFile, keyStorePW);
         serverConnection = (SSLServerSocket) sslServFact.createServerSocket(portNumber, 0,
                 InetAddress.getLocalHost());
+        Log.log("Created a new LinkBroker at %s:%d\n", InetAddress.getLocalHost()
+                .getCanonicalHostName(), portNumber);
     }
     
     /**
@@ -72,10 +73,10 @@ public class Linker {
             SSLSocket s = null;
             try {
                 s = (SSLSocket) serverConnection.accept();
-                System.out.println("New connection from "
-                        + s.getInetAddress().getCanonicalHostName() + ":" + s.getPort());
+                Log.log("New connection from " + s.getInetAddress().getCanonicalHostName() + ":"
+                        + s.getPort());
             } catch (IOException e) {
-                System.err.println("Error: I/O error whilst accepting socket");
+                Log.error("I/O error whilst accepting socket");
                 e.printStackTrace();
             }
 
@@ -84,7 +85,7 @@ public class Linker {
                 try {
                     s.close();
                 } catch (IOException e) {
-                    System.err.println("Error: I/O error whilst closing" + " socket");
+                    Log.error("I/O error whilst closing" + " socket");
                     e.printStackTrace();
                 }
             }
@@ -112,24 +113,24 @@ public class Linker {
 //                        mainFile.lastIndexOf(".java"));
                 manifest.getMainAttributes().put(Attributes.Name.MAIN_CLASS, mainFile);
 
-                System.err.println("DEBUG:main-point: " + mainFile);
+                Log.log("main-point: " + mainFile);
 
                 jarOut = new JarOutputStream(new FileOutputStream("temp.jar"), manifest);
             } catch (FileNotFoundException e1) {
-                System.err.println("Error: could not create temp.jar");
+                Log.error("could not create temp.jar");
                 e1.printStackTrace();
             } catch (IOException e1) {
-                System.err.println("Error: I/O error whilst constructing " + "JarOutputStream");
+                Log.error("I/O error whilst constructing " + "JarOutputStream");
                 e1.printStackTrace();
             }
 
             if (jarOut != null && manifest != null) {
                 int nLicenses = 0;
                 try {
-                    System.out.println("Reading number of licenses");
+                    Log.log("Reading number of licenses");
                     nLicenses = inStream.readInt();
                 } catch (IOException e) {
-                    System.err.println("Error: I/O error during license reading");
+                    Log.error("I/O error during license reading");
                     e.printStackTrace();
                     nLicenses = -1;
                 }
@@ -145,7 +146,7 @@ public class Linker {
                             swhPort = inStream.readInt();
                             license = inStream.readUTF();
                         } catch (IOException e) {
-                            System.err.println("Error: could not read license information");
+                            Log.error("Could not read license information");
                             e.printStackTrace();
                             break;
                         }
@@ -153,7 +154,7 @@ public class Linker {
                         if (swhIP != null && license != null && swhPort != -1) {
                             SSLSocket swhCon;
                             try {
-                                System.out.println("Establishing socket to " + swhIP + ":"
+                                Log.log("Establishing socket to " + swhIP + ":"
                                         + swhPort);
                                 swhCon = (SSLSocket) sslFact.createSocket(swhIP, swhPort);
                                 DataOutputStream swhOut = NetworkUtilities
@@ -166,8 +167,8 @@ public class Linker {
                                 swhOut.writeUTF(connection.getInetAddress().getCanonicalHostName());
 
                                 if (NetworkUtilities.readFile(swhCon, jarOut, true)) {
-                                    System.out.println("Successfully read file");
-                                    System.out.println("Notifying SWH and Dev");
+                                    Log.log("Successfully read file");
+                                    Log.log("Notifying SWH and Dev");
                                     outStream.writeBoolean(true);
                                     swhOut.writeBoolean(true);
                                     count++;
@@ -181,24 +182,23 @@ public class Linker {
 
                                 swhCon.close();
                             } catch (UnknownHostException e) {
-                                System.err.println("Error: could not resolve" + "SWH IP");
+                                Log.error("Could not resolve SWH IP");
                                 e.printStackTrace();
                             } catch (IOException e) {
-                                System.err.println("Error: encountered I/O"
-                                        + " issue getting library");
+                                Log.error("Encountered I/O issue getting library");
                                 e.printStackTrace();
                             }
                         } else {
                             try {
                                 // could not read license information
-                                System.out.println("License information could"
+                                Log.log("License information could"
                                         + " not be read --- exiting");
                                 outStream.writeBoolean(false);
                                 count = -1;
                                 break;
                             } catch (IOException e) {
-                                System.err.println("Error: could not tell developer"
-                                        + " that we could not read licenses");
+                                Log.error("Could not tell developer that we could not read " +
+                                		"licenses");
                                 e.printStackTrace();
                                 count = -1;
                                 break;
@@ -207,15 +207,15 @@ public class Linker {
                     }
 
                     if (count == nLicenses) {
-                        System.out.println("Successfully read all files into JAR");
+                        Log.log("Successfully read all files into JAR");
                         try {
                             outStream.writeBoolean(true);
                         } catch (IOException e) {
-                            System.err.println("Error: Could not notify developer of success");
+                            Log.error("Could not notify developer of success");
                             e.printStackTrace();
                         }
 
-                        System.out.println("Reading class files from Developer");
+                        Log.log("Reading class files from Developer");
                         int nFiles = -1;
                         try {
                             nFiles = inStream.readInt();
@@ -225,57 +225,55 @@ public class Linker {
                                 if (NetworkUtilities.readFile(connection, jarOut, true)) {
                                     count++;
                                 } else {
-                                    System.out.println("Could not read files to JAR");
+                                    Log.log("Could not read files to JAR");
                                     break;
                                 }
                             }
                         } catch (IOException e) {
-                            System.err.println("Error: IO Exception whilst reading class files");
+                            Log.error("IO Exception whilst reading class files");
                             e.printStackTrace();
                         }
 
                         try {
                             jarOut.close();
                         } catch (IOException e) {
-                            System.err.println("Error: could not properly close JarOutputStream");
+                            Log.error("Could not properly close JarOutputStream");
                             e.printStackTrace();
                         }
 
-                        // TODO: remove temp.jar
                         if (nFiles > 0 && count == nFiles) {
                             File jarFile = new File("temp.jar");
                             if (NetworkUtilities.writeFile(connection, jarFile, "temp.jar")) {
-                                System.out.println("Sent JAR file successfully");
+                                Log.log("Sent JAR file successfully");
                             } else {
-                                System.out.println("Could not send JAR file");
+                                Log.log("Could not send JAR file");
                             }
 
-                            System.out.println("Cleanup: deleting JAR file");
+                            Log.log("Cleanup: deleting JAR file");
                             if (jarFile.delete()) {
-                                System.out.println("Successfully deleted" + " temp.jar");
+                                Log.log("Successfully deleted temp.jar");
                             } else {
-                                System.out.println("Something went wrong,"
+                                Log.log("Something went wrong,"
                                         + " could not delete temp.jar");
                             }
                         }
                     } else {
                         try {
-                            System.out.println("Linking fail, notifying developer");
+                            Log.log("Linking fail, notifying developer");
                             outStream.writeBoolean(false);
                         } catch (IOException e) {
-                            System.err.println("Error: could not notify developer");
+                            Log.error("Could not notify developer");
                             e.printStackTrace();
                         }
                     }
                 } else {
-                    System.out.println("Could not read number of licenses");
+                    Log.log("Could not read number of licenses");
                 }
             }
             NetworkUtilities.closeSocketDataInputStream(inStream, connection);
             NetworkUtilities.closeSocketDataOutputStream(outStream, connection);
 
-            System.out.println("<-----End Communication----->");
-            System.out.println();
+            Log.logEnd();
         }
     }
 
@@ -307,10 +305,10 @@ public class Linker {
         try {
             link = new Linker(portNumber, keyFile, keyStorePW, trustFile, trustStorePW);
         } catch (UnknownHostException e) {
-            System.err.println("Error: could not resolve hostname");
+            Log.error("Could not resolve hostname");
             e.printStackTrace();
         } catch (IOException e) {
-            System.err.println("Error: I/O error whilst establishing" + " new Linker");
+            Log.error("I/O error whilst establishing new Linker");
             e.printStackTrace();
         }
         if (link != null) {

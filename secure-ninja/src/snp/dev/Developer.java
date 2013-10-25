@@ -32,6 +32,7 @@ import javax.net.ssl.SSLSocket;
 
 import snp.CompileUtility;
 import snp.License;
+import snp.Log;
 import snp.NetworkUtilities;
 import snp.SecurityUtilities;
 
@@ -55,7 +56,6 @@ public class Developer {
         }
     }
 
-    // TODO Catch InputMismatchException ?
     private void processCommands(Scanner sc) {
         do {
             System.out.println("Commands:\n" + "\tRequest <Hostname> <Port> <LibraryName>"
@@ -74,10 +74,10 @@ public class Developer {
                     requestLicense(numLicenses, libName, connection);
                     connection.close();
                 } catch (UnknownHostException e) {
-                    System.err.println("Error: host name could" + " not be resolved");
+                    Log.error("Host name could not be resolved");
                     e.printStackTrace();
                 } catch (IOException e) {
-                    System.err.println("Error: I/O error occurred");
+                    Log.error("I/O error occurred");
                     e.printStackTrace();
                 }
             } else if (command.equalsIgnoreCase("Link")) {
@@ -128,10 +128,10 @@ public class Developer {
                     linkFiles(mainName, srcFiles, requestedLicenses, jarFileName, connection);
                     connection.close();
                 } catch (UnknownHostException e) {
-                    System.err.println("Error: host name could" + " not be resolved");
+                    Log.error("Host name could not be resolved");
                     e.printStackTrace();
                 } catch (IOException e) {
-                    System.err.println("Error: I/O error occurred");
+                    Log.error("I/O error occurred");
                     e.printStackTrace();
                 }
             } else if (command.equalsIgnoreCase("Quit")) {
@@ -148,13 +148,9 @@ public class Developer {
         DataOutputStream outStream = NetworkUtilities.getDataOutputStream(connection);
 
         if (inStream != null && outStream != null) {
-            // later would need to send client credentials
             try {
                 outStream.writeUTF("REQ");
-                System.out.printf(
-                        "Getting %d licenses for %s from %s\n",
-                        numLicense,
-                        libraryName,
+                Log.log("Getting %d licenses for %s from %s\n", numLicense, libraryName,
                         connection.getInetAddress().getCanonicalHostName() + ":"
                                 + connection.getPort());
                 outStream.writeUTF(libraryName);
@@ -169,15 +165,13 @@ public class Developer {
                 }
                 PublicKey pubKey = genPublicKey(keyBytes, algo);
                 if (pubKey == null) {
-                    System.out.println("Unable to reconstruct SWH's public key");
-                    outStream.writeBoolean(false); // tell SWH we can't get
-                                                   // their key
+                    Log.log("Unable to reconstruct SWH's public key");
+                    outStream.writeBoolean(false); // tell SWH we can't get their key
 
                     NetworkUtilities.closeSocketDataInputStream(inStream, connection);
                     NetworkUtilities.closeSocketDataOutputStream(outStream, connection);
 
-                    System.out.println("<-----End Communication----->");
-                    System.out.println();
+                    Log.logEnd();
                     return;
                 }
                 // Telling SWH that we got their key
@@ -185,7 +179,7 @@ public class Developer {
 
                 // reading in the number of licenses we received from the SWH
                 int nLicReturned = inStream.readInt();
-                System.out.printf("%s returning %d licenses\n", connection.getInetAddress()
+                Log.log("%s returning %d licenses\n", connection.getInetAddress()
                         .getCanonicalHostName() + ":" + connection.getPort(), nLicReturned);
                 for (int i = 0; i < nLicReturned; i++) {
                     String license = inStream.readUTF();
@@ -196,31 +190,27 @@ public class Developer {
                         // inform SWH that we successfully added the license
                         outStream.writeBoolean(true);
                     } else {
-                        outStream.writeBoolean(false); // telling SWH we cant
-                                                       // encrypt their license
-                        System.err
-                                .println("Failed to encrypt license with SWH's public key, exiting");
+                        outStream.writeBoolean(false); // telling SWH we can't encrypt their license
+                        Log.error("Failed to encrypt license with SWH's public key, exiting");
                         NetworkUtilities.closeSocketDataInputStream(inStream, connection);
                         NetworkUtilities.closeSocketDataOutputStream(outStream, connection);
 
-                        System.out.println("<-----End Communication----->");
-                        System.out.println();
+                        Log.logEnd();
                         return;
                     }
                 }
 
                 if (nLicReturned <= 0) {
-                    System.out.printf("%s declined to send licenses\n", connection.getInetAddress()
+                    Log.log("%s declined to send licenses\n", connection.getInetAddress()
                             .getCanonicalHostName());
                 } else {
-                    System.out.printf("Received %d licenses from %s\n", nLicReturned, connection
+                    Log.log("Received %d licenses from %s\n", nLicReturned, connection
                             .getInetAddress().getCanonicalHostName());
                 }
                 NetworkUtilities.closeSocketDataInputStream(inStream, connection);
                 NetworkUtilities.closeSocketDataOutputStream(outStream, connection);
 
-                System.out.println("<-----End Communication----->");
-                System.out.println();
+                Log.logEnd();
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -234,10 +224,10 @@ public class Developer {
             PublicKey pubKey = keyFact.generatePublic(keySpec);
             return pubKey;
         } catch (NoSuchAlgorithmException e) {
-            // TODO Auto-generated catch block
+            Log.error("Could not find algorithm %s for KeyFactory generation", algo);
             e.printStackTrace();
         } catch (InvalidKeySpecException e) {
-            // TODO Auto-generated catch block
+            Log.error("The provided keyspec was invalid");
             e.printStackTrace();
         }
         return null;
@@ -245,7 +235,7 @@ public class Developer {
 
     private String wrapLicense(String license, PublicKey pubKey) {
         if (pubKey == null) {
-            System.out.println("Null PublicKey received");
+            Log.log("Null PublicKey received");
             return null;
         }
         // Encrypt a license with a SWH public key using asymmetric key
@@ -257,19 +247,19 @@ public class Developer {
             String encryptedLicense = NetworkUtilities.bytesToHex(encrypted);
             return encryptedLicense;
         } catch (NoSuchAlgorithmException e) {
-            // TODO Auto-generated catch block
+            Log.error("Could not find algorithm RSA for assymmetric key encryption");
             e.printStackTrace();
         } catch (NoSuchPaddingException e) {
-            // TODO Auto-generated catch block
+            Log.error("Could not create padding");
             e.printStackTrace();
         } catch (InvalidKeyException e) {
-            // TODO Auto-generated catch block
+            Log.error("The provided key for license wrapping was invalid");
             e.printStackTrace();
         } catch (IllegalBlockSizeException e) {
-            // TODO Auto-generated catch block
+            Log.error("The block of data to be wrapped seems to be too big");
             e.printStackTrace();
         } catch (BadPaddingException e) {
-            // TODO Auto-generated catch block
+            Log.error("Could not create padding");
             e.printStackTrace();
         }
         return null;
@@ -291,7 +281,7 @@ public class Developer {
         File jarFile = null;
 
         if (inStream != null && outStream != null) {
-            System.out.println("Sending licenses");
+            Log.log("Sending licenses");
 
             int count = 0;
             Map<String, String> licenseMap = new HashMap<String, String>();
@@ -299,27 +289,26 @@ public class Developer {
             try {
                 md = MessageDigest.getInstance("MD5");
             } catch (NoSuchAlgorithmException e1) {
-                // TODO Auto-generated catch block
+                Log.error("No such algorithm for message digest available");
                 e1.printStackTrace();
             }
-            String password = "";
+            String password = null;
 
             try {
                 // send the main entry point across
                 outStream.writeUTF(mainFile);
             } catch (IOException e) {
-                System.err.println("Error: could not send across main file point");
+                Log.error("Could not send across main file point");
                 e.printStackTrace();
                 count = -1;
             }
 
             try {
-                System.out.println("Sending number of licenses");
+                Log.log("Sending number of licenses");
                 // write -1 for an error occurring previously
                 outStream.writeInt(count == -1 ? -1 : requestedLicenses.size());
             } catch (IOException e) {
-                System.err.println("Error: encountered I/O error whilst writing"
-                        + " number of licenses to network");
+                Log.error("Encountered I/O error whilst writing number of licenses to network");
                 e.printStackTrace();
                 count = -1;
             }
@@ -327,7 +316,7 @@ public class Developer {
             if (count != -1) {
                 for (License lic : requestedLicenses) {
                     try {
-                        System.out.println("Writing license to network");
+                        Log.log("Writing license to network");
                         outStream.writeUTF(lic.getSoftwareHouseIP().getCanonicalHostName());
                         outStream.writeInt(lic.getPort());
                         outStream.writeUTF(lic.getEncryptedLicenseString());
@@ -337,13 +326,13 @@ public class Developer {
                             count++;
                             licenseMap.put(lic.getLibraryName(), lic.getLicenseString());
                             md.update(lic.getLicenseString().getBytes());
-                            System.out.println("License used successfully, removing license");
+                            Log.log("License used successfully, removing license");
                         } else {
-                            System.out.println("Something went wrong on the" + " linker's end");
+                            Log.log("Something went wrong on the" + " linker's end");
                             break;
                         }
                     } catch (IOException e) {
-                        System.err.println("Error: I/O error sending license");
+                        Log.error("I/O error sending license");
                         e.printStackTrace();
                         break;
                     }
@@ -356,18 +345,18 @@ public class Developer {
                 try {
                     success = inStream.readBoolean();
                 } catch (IOException e) {
-                    System.err.println("Error: could not read return code" + " from LinkBroker");
+                    Log.error("Could not read return code" + " from LinkBroker");
                     e.printStackTrace();
                 }
 
                 if (success) {
-                    System.out.println("LinkBroker returned successful" + " license check");
+                    Log.log("LinkBroker returned successful" + " license check");
 
                     password = NetworkUtilities.bytesToHex(md.digest());
                     
-                    System.out.println("The final JAR file password will be: " + password);                    
+                    Log.log("The final JAR file password will be: " + password);                    
                     
-                    System.out.println("Sending class files to LinkBroker");
+                    Log.log("Sending class files to LinkBroker");
                     count = 0;
 
                     //List<File> classFiles = new ArrayList<File>();
@@ -381,7 +370,7 @@ public class Developer {
                         
                         String classFilePath = name.substring(name.lastIndexOf('.')+1)
                             + ".class";
-                        System.out.println("File: " + name + ", classFilePath: " + classFilePath);
+                        Log.log("File: " + name + ", classFilePath: " + classFilePath);
                         classFiles.put(name, new File(classFilePath));
                     }
 
@@ -390,62 +379,62 @@ public class Developer {
                         Set<String> classFileNames = classFiles.keySet();
                         for (String name : classFileNames) {
                             File f = classFiles.get(name);
-                            System.out.println("Sending " + name + " across network");
+                            Log.log("Sending " + name + " across network");
 
                             if (NetworkUtilities.writeFile(connection, f, name)) {
                                 count++;
                             } else {
-                                System.err.println("Error occurred sending " + f.getAbsolutePath());
+                                Log.error("Error occurred sending " + f.getAbsolutePath());
                                 break;
                             }
                         }
                     } catch (IOException e) {
-                        System.err.println("Error: Sending class files failed");
+                        Log.error("Sending class files failed");
                         e.printStackTrace();
                     }
 
                     if (count == srcFiles.size()) {
-                        System.out.println("Receiving JAR file from" + " LinkBroker");
+                        Log.log("Receiving JAR file from" + " LinkBroker");
                         try {
                             FileOutputStream target = new FileOutputStream(jarName + ".jar");
                             if (NetworkUtilities.readFile(connection, target, false)) {
-                                System.out.println("Successfully received" + " JAR file");
+                                Log.log("Successfully received" + " JAR file");
                                 jarFile = new File(jarName + ".jar");
+                                Log.log("Password is " + password);
                             } else {
-                                System.out.println("Error occurred" + " receiving " + jarName
+                                Log.log("Error occurred" + " receiving " + jarName
                                         + ".jar");
                             }
                         } catch (IOException e) {
-                            System.err.println("Error: Receiving JAR file" + " failed");
+                            Log.error("Receiving JAR file" + " failed");
                             e.printStackTrace();
                         }
                     }
                 } else {
-                    System.out.println("LinkBroker did not " + "return success code");
-                    System.out.println("Unsuccessful return from linking");
+                    Log.log("LinkBroker did not " + "return success code");
+                    Log.log("Unsuccessful return from linking");
                 }
             }
 
             NetworkUtilities.closeSocketDataInputStream(inStream, connection);
             NetworkUtilities.closeSocketDataOutputStream(outStream, connection);
 
-            System.out.println("<-----End Communication----->");
-            System.out.println();
+            Log.logEnd();
         }
         return jarFile;
     }
 
     private List<License> getLicenses(List<String> libNames) {
-        System.out.println("Checking licenses");
+        Log.log("Checking licenses");
         List<License> requestedLicenses = new ArrayList<License>();
 
         for (String lib : libNames) {
             if (!hasLicense(lib)) {
-                System.out.println("Missing license for " + lib);
-                System.out.println("Unsuccessful return from linking");
+                Log.log("Missing license for " + lib);
+                Log.log("Unsuccessful return from linking");
                 return null;
             } else {
-                System.out.println("Found a license for " + lib);
+                Log.log("Found a license for " + lib);
                 requestedLicenses.add(getLicense(lib));
             }
         }
@@ -488,7 +477,7 @@ public class Developer {
             String classpath = args[2];
             dev = new Developer(classpath, trustFile, password);
         } catch (UnknownHostException e) {
-            System.err.println("Error: host name could" + " not be resolved");
+            Log.error("Host name could not be resolved");
             e.printStackTrace();
         }
         if (dev != null && sc != null) {

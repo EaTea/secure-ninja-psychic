@@ -26,13 +26,14 @@ import javax.net.ssl.SSLSocket;
 
 import snp.CompileUtility;
 import snp.License;
+import snp.Log;
 import snp.NetworkUtilities;
 import snp.SecurityUtilities;
 
 public class SWH {
 
     private String classpath;
-    
+
     private Map<String, License> clientLicenses;
 
     private Map<String, File> libraries;
@@ -42,17 +43,17 @@ public class SWH {
     private SSLServerSocket serverConnection;
 
     private KeyPair myKey;
-    
+
     private static final int keySize = 2048;
-    
+
     private static final String algo = "RSA";
-    
-    public SWH(String classpath, int serverPort, String keyFile, String password) throws UnknownHostException,
-            IOException, NoSuchAlgorithmException {
+
+    public SWH(String classpath, int serverPort, String keyFile, String password)
+            throws UnknownHostException, IOException, NoSuchAlgorithmException {
         clientLicenses = new HashMap<String, License>();
         libraries = new HashMap<String, File>();
-        sslservfact = (SSLServerSocketFactory) SecurityUtilities.getSSLServerSocketFactory(
-                keyFile, password);
+        sslservfact = (SSLServerSocketFactory) SecurityUtilities.getSSLServerSocketFactory(keyFile,
+                password);
         serverConnection = (SSLServerSocket) sslservfact.createServerSocket(serverPort, 0,
                 InetAddress.getLocalHost());
         KeyPairGenerator keyGen = KeyPairGenerator.getInstance(algo);
@@ -60,26 +61,25 @@ public class SWH {
         myKey = keyGen.genKeyPair();
         this.classpath = classpath;
         if (classpath.endsWith("/")) {
-            classpath = classpath.substring(0, classpath.length()-2);
+            classpath = classpath.substring(0, classpath.length() - 2);
         }
-        System.out.println("Created a new SoftwareHouse at "
+        Log.log("Created a new SoftwareHouse at "
                 + serverConnection.getInetAddress().getCanonicalHostName() + ":"
                 + serverConnection.getLocalPort());
     }
 
     private void listenForCommands() throws IOException {
         SSLSocket connection = null;
-        System.out.println();
         do {
             try {
                 connection = (SSLSocket) serverConnection.accept();
             } catch (IOException e) {
-                System.err.println("Error: IO error whilst" + " accepting connection");
+                Log.error("IO error whilst accepting connection");
                 e.printStackTrace();
             }
-    
+
             if (connection != null) {
-                System.out.println("Accepting connection from "
+                Log.log("Accepting connection from "
                         + connection.getInetAddress().getCanonicalHostName() + ":"
                         + connection.getPort());
                 DataInputStream inStream = NetworkUtilities.getDataInputStream(connection);
@@ -88,10 +88,10 @@ public class SWH {
                     try {
                         command = inStream.readUTF();
                     } catch (IOException e) {
-                        System.err.println("Error: could read command " + "from stream");
+                        Log.error("Could read command " + "from stream");
                         e.printStackTrace();
                     }
-    
+
                     if (command != null) {
                         if (command.equalsIgnoreCase("REQ")) {
                             generateLicenses(connection);
@@ -101,14 +101,14 @@ public class SWH {
                     }
                 }
             }
-    
+
             try {
-                System.out.println("Closing connection to "
+                Log.log("Closing connection to "
                         + connection.getInetAddress().getCanonicalHostName() + ":"
                         + connection.getPort());
                 connection.close();
             } catch (IOException e) {
-                System.err.println("Error: IO error whilst" + " closing connection");
+                Log.error("IO error whilst" + " closing connection");
                 e.printStackTrace();
             }
         } while (true);
@@ -121,99 +121,95 @@ public class SWH {
     private void generateLicenses(SSLSocket connection) {
         DataInputStream inStream = NetworkUtilities.getDataInputStream(connection);
         DataOutputStream outStream = NetworkUtilities.getDataOutputStream(connection);
-    
-    
+
         if (inStream != null && outStream != null) {
-            System.out.println("Reading license request from "
+            Log.log("Reading license request from "
                     + connection.getInetAddress().getCanonicalHostName() + ":"
                     + connection.getPort());
-    
+
             int numLicenses = -1;
             String libName = null;
             try {
                 libName = inStream.readUTF();
                 numLicenses = inStream.readInt();
-    
-                System.out.println(connection.getInetAddress().getCanonicalHostName() + ":"
+
+                Log.log(connection.getInetAddress().getCanonicalHostName() + ":"
                         + connection.getPort() + " requested " + numLicenses + " licenses for "
                         + libName);
             } catch (IOException e) {
-                System.err.println("Error: could not " + "read library name and numLicenses");
+                Log.error("Could not read library name and numLicenses");
                 e.printStackTrace();
             }
-    
+
             if (numLicenses > 0 && libName != null && libraries.containsKey(libName)) {
                 try {
-                    System.out.println("Sending my public key to developer");
+                    Log.log("Sending my public key to developer");
                     byte[] keyBytes = myKey.getPublic().getEncoded();
                     outStream.writeUTF(algo);
                     outStream.writeInt(keyBytes.length);
                     outStream.write(keyBytes);
-                    System.out.println((NetworkUtilities.bytesToHex(keyBytes)));
-                    if(!inStream.readBoolean()) {
-                        System.out.println("Receiving my public key by developer failed");
+                    Log.log((NetworkUtilities.bytesToHex(keyBytes)));
+                    if (!inStream.readBoolean()) {
+                        Log.log("Receiving my public key by developer failed");
                         NetworkUtilities.closeSocketDataInputStream(inStream, connection);
                         NetworkUtilities.closeSocketDataOutputStream(outStream, connection);
-    
-                        System.out.println("<-----End Communication----->");
-                        System.out.println();
+
+                        Log.logEnd();
                         return;
                     }
-    
-                    System.out.println("Generating licenses for "
+
+                    Log.log("Generating licenses for "
                             + connection.getInetAddress().getCanonicalHostName() + ":"
                             + connection.getPort());
                     outStream.writeInt(numLicenses);
-    
+
                     for (int i = 0; i < numLicenses; i++) {
                         String s = libName + i + System.currentTimeMillis() + Math.random();
                         MessageDigest md = MessageDigest.getInstance("MD5");
-    
+
                         // Note that s.getBytes() is not platform independent.
                         // Better approach would be to use character encodings.
                         String license = NetworkUtilities.bytesToHex(md.digest(s.getBytes()));
                         outStream.writeUTF(license);
-                        //Developer told us that they cant encrypt our license with our public key
-                        if(!inStream.readBoolean()) {
-                            System.out.println("Developer unable to "
-                             + "encrypt our license with our key, exiting");
+                        // Developer told us that they cant encrypt our license
+                        // with our public key
+                        if (!inStream.readBoolean()) {
+                            Log.log("Developer unable to "
+                                    + "encrypt our license with our key, exiting");
                             NetworkUtilities.closeSocketDataInputStream(inStream, connection);
                             NetworkUtilities.closeSocketDataOutputStream(outStream, connection);
-    
-                            System.out.println("<-----End Communication----->");
-                            System.out.println();
+
+                            Log.logEnd();
                             return;
                         }
                         addLicense(license, new License(license, InetAddress.getLocalHost(),
                                 libName, connection.getLocalPort(), null
-                                /*SWH doesnt need to store encrypted license*/));
+                        /* SWH doesnt need to store encrypted license */));
                     }
                 } catch (IOException e) {
-                    System.err.println("Error: encountered I/O error whilst "
-                            + "generating licenses");
+                    Log.error("encountered I/O error whilst " + "generating licenses");
                     e.printStackTrace();
                 } catch (NoSuchAlgorithmException e) {
-                    System.err.println("Error: could not construct MD5 message" + "digest");
+                    Log.error("could not construct MD5 message" + "digest");
                     e.printStackTrace();
                 }
             } else {
                 try {
-                    System.out.println("Refusing developer license request");
-                    System.out.printf("Found values:\n\tnumLicenses: %d\n"
+                    Log.log("Refusing developer license request");
+                    Log.log("Found values:\n\tnumLicenses: %d\n"
                             + "\tlibName: %s\n\thasLibrary? %s\n", numLicenses, libName,
                             libraries.containsKey(libName));
                     outStream.writeInt(-1);
                 } catch (IOException e) {
-                    System.err.println("Error: could not say no to Developer");
+                    Log.error("could not say no to Developer");
                     e.printStackTrace();
                 }
             }
-    
+
             NetworkUtilities.closeSocketDataInputStream(inStream, connection);
             NetworkUtilities.closeSocketDataOutputStream(outStream, connection);
-    
-            System.out.println("<-----End Communication----->");
-            System.out.println();
+
+            Log.logEnd();
         }
     }
 
@@ -231,35 +227,35 @@ public class SWH {
     private void acceptLicenses(SSLSocket connection) {
         DataInputStream inStream = NetworkUtilities.getDataInputStream(connection);
         if (inStream != null) {
-            System.out.println("Checking if license is legitimate");
+            Log.log("Checking if license is legitimate");
             String license = null, developerID = null;
             try {
                 license = inStream.readUTF();
                 developerID = inStream.readUTF();
-                System.out.printf("Read in license %s\n", license);
+                Log.log("Read in license %s\n", license);
                 license = unwrapLicense(license);
             } catch (IOException e) {
-                System.err.println("Error: I/O error whilst reading licenses");
+                Log.error("I/O error whilst reading licenses");
                 e.printStackTrace();
             }
-    
+
             if (license != null && verifyLicense(license) && developerID != null) {
                 License temp = clientLicenses.get(license);
                 String libraryName = temp.getLibraryName();
-                System.out.printf("License corresponds to library %s\n", libraryName);
-                
-                System.out.println("Compiling class file");
-                
+                Log.log("License corresponds to library %s\n", libraryName);
+
+                Log.log("Compiling class file");
+
                 CompileUtility.compileSWHFile(libraries.get(libraryName), libraryName, license);
-                
-                String classFilePath = libraryName.substring(libraryName.lastIndexOf('.')+1)
-                    + ".class";
+
+                String classFilePath = libraryName.substring(libraryName.lastIndexOf('.') + 1)
+                        + ".class";
                 File toWrite = new File(classFilePath);
-    
+
                 if (NetworkUtilities.writeFile(connection, toWrite, libraryName)) {
                     try {
                         if (inStream.readBoolean()) {
-                            System.out.println("File sent successfully, removing license");
+                            Log.log("File sent successfully, removing license");
                             decrementLicense(license);
                         } else {
                             System.err.println("Something went wrong on the" + " linker's end");
@@ -271,24 +267,22 @@ public class SWH {
                     }
                 }
             } else {
-                System.out.println("Could not verify license, sending" + " rejection to Linker");
+                Log.log("Could not verify license, sending" + " rejection to Linker");
                 DataOutputStream outStream = NetworkUtilities.getDataOutputStream(connection);
-    
+
                 try {
                     outStream.writeLong(-1);
                 } catch (IOException e) {
-                    System.err.println("Error: encountered I/O error whilst "
-                            + "sending rejection to Linker");
+                    Log.error("encountered I/O error whilst " + "sending rejection to Linker");
                     e.printStackTrace();
                 }
                 NetworkUtilities.closeSocketDataOutputStream(outStream, connection);
             }
-    
+
             NetworkUtilities.closeSocketDataInputStream(inStream, connection);
         }
-    
-        System.out.println("<-----End Communication----->");
-        System.out.println();
+
+        Log.logEnd();
     }
 
     private String unwrapLicense(String license) {
@@ -299,7 +293,7 @@ public class SWH {
             cipher.init(Cipher.DECRYPT_MODE, privKey);
             byte[] licenseBytes = NetworkUtilities.hexStringToByteArray(license);
             byte[] decrypted = cipher.doFinal(licenseBytes);
-            
+
             String decryptedLicense = NetworkUtilities.bytesToHex(decrypted);
             return decryptedLicense;
         } catch (NoSuchAlgorithmException e) {
@@ -343,7 +337,7 @@ public class SWH {
             System.err.println("\tArgument 4 = classpath");
             System.exit(1);
         }
-        
+
         SWH swh = null;
         int portNumber = Integer.parseInt(args[0]);
         String keyFile = args[1];
@@ -354,11 +348,10 @@ public class SWH {
             // TODO
             swh = new SWH(classpath, portNumber, keyFile, password);
         } catch (UnknownHostException e) {
-            System.err.println("Error: host name could not be resolved; exiting");
+            Log.error("Host name could not be resolved; exiting");
             e.printStackTrace();
         } catch (IOException e) {
-            System.err.println("Error: an IO error occurred during ServerSocket initialisation; " +
-            		"exiting");
+            Log.error("An IO error occurred during ServerSocket initialisation; " + "exiting");
             e.printStackTrace();
         } catch (NoSuchAlgorithmException e) {
             // TODO Auto-generated catch block
@@ -366,12 +359,12 @@ public class SWH {
         }
         if (swh != null) {
             Scanner sc = new Scanner(System.in);
-            System.out.println("How many files is this SoftwareHouse responsible for?");
+            Log.log("How many files is this SoftwareHouse responsible for?");
             int nFiles = sc.nextInt();
 
-            System.out.printf("Enter %d source files in format:\n"
-                    + "\t<fully qualified pathname>\n"
-                    + "Example:\n" + "\tgoo.buzz.Buzz\n", nFiles);
+            System.out
+                    .printf("Enter %d source files in format:\n" + "\t<fully qualified pathname>\n"
+                            + "Example:\n" + "\tgoo.buzz.Buzz\n", nFiles);
             for (int i = 0; i < nFiles; i++) {
                 String libName = sc.next();
                 String libPath = libName.replace('.', '/') + ".java";

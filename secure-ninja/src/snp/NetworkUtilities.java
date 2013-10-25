@@ -23,7 +23,7 @@ public class NetworkUtilities {
       //      System.err.println("WHY DOES OBJECT INPUT STREAM HATE ME?");
 
         } catch (IOException e) {
-            System.err.println("Error: could not open I/O socket stream");
+            Log.error("Could not open I/O socket stream");
             e.printStackTrace();
         }
         return inStream;
@@ -36,7 +36,7 @@ public class NetworkUtilities {
                     + connection.getInetAddress().getHostName() + ":" + connection.getPort());
             outStream = new DataOutputStream(connection.getOutputStream());
         } catch (IOException e) {
-            System.err.println("Error: could not open I/O socket stream");
+            Log.error("Could not open I/O socket stream");
             e.printStackTrace();
         }
         return outStream;
@@ -48,7 +48,7 @@ public class NetworkUtilities {
                     + connection.getInetAddress().getHostName() + ":" + connection.getPort());
             inStream.close();
         } catch (IOException e) {
-            System.err.println("Error: could not close I/O socket stream");
+            Log.error("Could not close I/O socket stream");
             e.printStackTrace();
             return;
         }
@@ -60,7 +60,7 @@ public class NetworkUtilities {
                     + connection.getInetAddress().getHostName() + ":" + connection.getPort());
             outStream.close();
         } catch (IOException e) {
-            System.err.println("Error: could not close I/O socket stream");
+            Log.error("Could not close I/O socket stream");
             e.printStackTrace();
             return;
         }
@@ -90,7 +90,7 @@ public class NetworkUtilities {
                     target.write(inStream.read());
                 }
             } catch (IOException e) {
-                System.err.println("Error: could not read file from network");
+                Log.error("Could not read file from network");
                 e.printStackTrace();
                 success = false;
             }
@@ -120,7 +120,7 @@ public class NetworkUtilities {
                 }
                 fileInStream.close();
             } catch (IOException e) {
-                System.err.println("Error: could not write file to network");
+                Log.error("Could not write file to network");
                 e.printStackTrace();
                 success = false;
             }
