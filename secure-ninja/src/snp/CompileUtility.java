@@ -18,6 +18,7 @@ import javax.tools.ToolProvider;
 import javax.tools.JavaCompiler.CompilationTask;
 
 public class CompileUtility {
+    
     private static final String LICENSE_PATTERN = "\\s*[/*].*LICENSE.*[*/]\\s*";
     
     private static final String PASSWORD_PATTERN = "\\s*[/*].*PASSWORD.*[*/]\\s*";
@@ -85,8 +86,8 @@ public class CompileUtility {
         DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<JavaFileObject>();
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
         
-        
         Iterable<? extends JavaFileObject> compilationUnits = Arrays.asList(file);
+        // note: resulting class ends up inside the same directory as running Java program
         CompilationTask task = compiler.getTask(null, null, diagnostics, null, null,
                 compilationUnits);
 
@@ -95,6 +96,7 @@ public class CompileUtility {
             Log.log(diagnostic.getCode());
             Log.log(diagnostic.getKind().toString());
             // HACK: a more robust logging platform would effectively log any type of primitive
+            // the string conversion was just to get a string object 
             Log.log(diagnostic.getPosition()+"");
             Log.log(diagnostic.getStartPosition()+"");
             Log.log(diagnostic.getEndPosition()+"");
@@ -102,23 +104,23 @@ public class CompileUtility {
             Log.log(diagnostic.getMessage(null));
 
         }
+        
         return success;
     }
-}
+    
+    private static class JavaSourceFromFile extends SimpleJavaFileObject {
+        final String code;
 
-class JavaSourceFromFile extends SimpleJavaFileObject {
-    final String code;
-    final String name;
+        JavaSourceFromFile(String name, String code) {
+            super(URI.create("string:///" + name.replace('.', '/') + Kind.SOURCE.extension),
+                    Kind.SOURCE);
+            this.code = code;
+        }
 
-    JavaSourceFromFile(String name, String code) {
-        super(URI.create("string:///" + name.replace('.', '/') + Kind.SOURCE.extension),
-                Kind.SOURCE);
-        this.name = name.replace('.', '/');
-        this.code = code;
+        @Override
+        public CharSequence getCharContent(boolean ignoreEncodingErrors) {
+            return code;
+        }
     }
 
-    @Override
-    public CharSequence getCharContent(boolean ignoreEncodingErrors) {
-        return code;
-    }
 }
