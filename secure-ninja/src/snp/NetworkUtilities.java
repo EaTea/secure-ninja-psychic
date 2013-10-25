@@ -17,13 +17,11 @@ public class NetworkUtilities {
     public static DataInputStream getDataInputStream(SSLSocket connection) {
         DataInputStream inStream = null;
         try {
-            System.out.println("Opening input stream from: "
+            Log.log("Opening input stream from: "
                     + connection.getInetAddress().getHostName() + ":" + connection.getPort());
             inStream = new DataInputStream(connection.getInputStream());
-      //      System.err.println("WHY DOES OBJECT INPUT STREAM HATE ME?");
-
         } catch (IOException e) {
-            System.err.println("Error: could not open I/O socket stream");
+            Log.error("Could not open I/O socket stream");
             e.printStackTrace();
         }
         return inStream;
@@ -32,11 +30,11 @@ public class NetworkUtilities {
     public static DataOutputStream getDataOutputStream(SSLSocket connection) {
         DataOutputStream outStream = null;
         try {
-            System.out.println("Opening output stream to: "
+            Log.log("Opening output stream to: "
                     + connection.getInetAddress().getHostName() + ":" + connection.getPort());
             outStream = new DataOutputStream(connection.getOutputStream());
         } catch (IOException e) {
-            System.err.println("Error: could not open I/O socket stream");
+            Log.error("Could not open I/O socket stream");
             e.printStackTrace();
         }
         return outStream;
@@ -44,11 +42,11 @@ public class NetworkUtilities {
 
     public static void closeSocketDataInputStream(DataInputStream inStream, SSLSocket connection) {
         try {
-            System.out.println("Closing input stream from: "
+            Log.log("Closing input stream from: "
                     + connection.getInetAddress().getHostName() + ":" + connection.getPort());
             inStream.close();
         } catch (IOException e) {
-            System.err.println("Error: could not close I/O socket stream");
+            Log.error("Could not close I/O socket stream");
             e.printStackTrace();
             return;
         }
@@ -56,11 +54,11 @@ public class NetworkUtilities {
 
     public static void closeSocketDataOutputStream(DataOutputStream outStream, SSLSocket connection) {
         try {
-            System.out.println("Closing output stream to: "
+            Log.log("Closing output stream to: "
                     + connection.getInetAddress().getHostName() + ":" + connection.getPort());
             outStream.close();
         } catch (IOException e) {
-            System.err.println("Error: could not close I/O socket stream");
+            Log.error("Could not close I/O socket stream");
             e.printStackTrace();
             return;
         }
@@ -72,16 +70,16 @@ public class NetworkUtilities {
 
         if (inStream != null) {
             try {
-                System.out.println("Reading file from network");
+                Log.log("Reading file from network");
                 long fileLength = inStream.readLong();
-                System.out.println("Length: " + fileLength);
+                Log.log("Length: " + fileLength);
                 String filePath = inStream.readUTF();
-                System.out.println("File path: " + filePath);
+                Log.log("File path: " + filePath);
 
                 if (isJAREntry) {
                     // FIXME: filePath separators may need to change
                     // e.g. ("/" -> "\")
-                    System.out.println("Constructing a JAR file");
+                    Log.log("Constructing a JAR file");
                     JarOutputStream jarTarget = (JarOutputStream) target;
                     jarTarget.putNextEntry(new JarEntry(filePath));
                 }
@@ -90,7 +88,7 @@ public class NetworkUtilities {
                     target.write(inStream.read());
                 }
             } catch (IOException e) {
-                System.err.println("Error: could not read file from network");
+                Log.error("Could not read file from network");
                 e.printStackTrace();
                 success = false;
             }
@@ -106,13 +104,13 @@ public class NetworkUtilities {
 
         if (outStream != null) {
             try {
-                System.out.println("Writing file to network");
+                Log.log("Writing file to network");
                 long fileSize = f.length();
                 outStream.writeLong(fileSize);
-                System.out.println("Length: " + fileSize);
+                Log.log("Length: " + fileSize);
                 String path = name.replace('.', '/') + ".class";
                 outStream.writeUTF(path);
-                System.out.println("File path: " + path);
+                Log.log("File path: " + path);
 
                 FileInputStream fileInStream = new FileInputStream(f);
                 for (long l = 0; l < fileSize; l++) {
@@ -120,7 +118,7 @@ public class NetworkUtilities {
                 }
                 fileInStream.close();
             } catch (IOException e) {
-                System.err.println("Error: could not write file to network");
+                Log.error("Could not write file to network");
                 e.printStackTrace();
                 success = false;
             }

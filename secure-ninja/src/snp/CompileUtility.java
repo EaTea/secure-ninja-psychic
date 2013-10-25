@@ -92,13 +92,14 @@ public class CompileUtility {
 
         boolean success = task.call();
         for (Diagnostic<?> diagnostic : diagnostics.getDiagnostics()) {
-            System.out.println(diagnostic.getCode());
-            System.out.println(diagnostic.getKind());
-            System.out.println(diagnostic.getPosition());
-            System.out.println(diagnostic.getStartPosition());
-            System.out.println(diagnostic.getEndPosition());
-            System.out.println(diagnostic.getSource());
-            System.out.println(diagnostic.getMessage(null));
+            Log.log(diagnostic.getCode());
+            Log.log(diagnostic.getKind().toString());
+            // HACK: a more robust logging platform would effectively log any type of primitive
+            Log.log(diagnostic.getPosition()+"");
+            Log.log(diagnostic.getStartPosition()+"");
+            Log.log(diagnostic.getEndPosition()+"");
+            Log.log(diagnostic.getSource()+"");
+            Log.log(diagnostic.getMessage(null));
 
         }
         return success;
@@ -114,8 +115,6 @@ class JavaSourceFromFile extends SimpleJavaFileObject {
                 Kind.SOURCE);
         this.name = name.replace('.', '/');
         this.code = code;
-        
-        System.err.println(this.code);
     }
 
     @Override

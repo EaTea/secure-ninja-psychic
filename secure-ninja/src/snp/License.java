@@ -1,6 +1,3 @@
-/**
- * 
- */
 package snp;
 
 import java.net.InetAddress;
