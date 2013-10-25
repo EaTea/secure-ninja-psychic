@@ -18,7 +18,7 @@ import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManagerFactory;
 
 /**
- * 
+ * Utilities class for setting up SSL.
  * @author Edwin Tay(20529864) && Wan Ying Goh(210784663)
  * @version Oct 2013
  */
