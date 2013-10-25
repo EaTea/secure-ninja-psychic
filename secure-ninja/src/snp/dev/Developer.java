@@ -159,6 +159,12 @@ public class Developer {
         } while (true);
     }
 
+    /**
+     * 
+     * @param numLicense
+     * @param libraryName
+     * @param connection
+     */
     private void requestLicense(int numLicense, String libraryName, SSLSocket connection) {
         DataInputStream inStream = NetworkUtilities.getDataInputStream(connection);
         DataOutputStream outStream = NetworkUtilities.getDataOutputStream(connection);
@@ -201,6 +207,11 @@ public class Developer {
         }
     }
 
+    /**
+     * 
+     * @param library
+     * @param l
+     */
     private void addLicense(String library, License l) {
         if (!licenseMap.containsKey(library)) {
             licenseMap.put(library, new LinkedList<License>());
@@ -209,6 +220,15 @@ public class Developer {
     }
 
     // TODO: make a new class for modules
+    /**
+     * 
+     * @param mainFile
+     * @param srcFiles
+     * @param requestedLicenses
+     * @param jarName
+     * @param connection
+     * @return
+     */
     private File linkFiles(String mainFile, Map<String, File> srcFiles, List<License> requestedLicenses,
             final String jarName, SSLSocket connection) {
 

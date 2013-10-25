@@ -10,10 +10,23 @@ import javax.net.ssl.SSLSocket;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 
+/**
+ * Utilities class for networking.
+ * @author Edwin Tay(20529864) && Wan Ying Goh(20784663)
+ * @version Oct 2013
+ */
 public class NetworkUtilities {
 
+    /**
+     * Map from number to hex characters.
+     */
     private final static char[] hexArray = "0123456789ABCDEF".toCharArray();
 
+    /**
+     * Get DataInputStream from the specified socket.
+     * @param connection the connected socket
+     * @return DataInputStream associated with the specified socket. Null if it is unsuccessful.
+     */
     public static DataInputStream getDataInputStream(SSLSocket connection) {
         DataInputStream inStream = null;
         try {
@@ -27,6 +40,11 @@ public class NetworkUtilities {
         return inStream;
     }
 
+    /**
+     * Get DataOutputStream from the specified socket.
+     * @param connection the connected socket
+     * @return DataOutputStream associated with the specified socket. Null if it is unsuccessful.
+     */
     public static DataOutputStream getDataOutputStream(SSLSocket connection) {
         DataOutputStream outStream = null;
         try {
@@ -40,6 +58,11 @@ public class NetworkUtilities {
         return outStream;
     }
 
+    /**
+     * Close the DateInputStream associated with the specified socket.
+     * @param inStream the datatInputStream to be closed
+     * @param connection the connected socket
+     */
     public static void closeSocketDataInputStream(DataInputStream inStream, SSLSocket connection) {
         try {
             Log.log("Closing input stream from: "
@@ -52,6 +75,11 @@ public class NetworkUtilities {
         }
     }
 
+    /**
+     * Close the DateOutputStream associated with the specified socket.
+     * @param outStream the datatOutputStream to be closed.
+     * @param connection the connected socket
+     */
     public static void closeSocketDataOutputStream(DataOutputStream outStream, SSLSocket connection) {
         try {
             Log.log("Closing output stream to: "
@@ -64,6 +92,13 @@ public class NetworkUtilities {
         }
     }
 
+    /**
+     * Reading a file from the connection and write it the targeted OutputStream.
+     * @param connection the connected socket
+     * @param target outputStream to write to
+     * @param isJAREntry indication whether the file is a JarEntry
+     * @return true if reading is successful. False otherwise.
+     */
     public static boolean readFile(SSLSocket connection, OutputStream target, boolean isJAREntry) {
         DataInputStream inStream = getDataInputStream(connection);
         boolean success = true;
@@ -77,7 +112,7 @@ public class NetworkUtilities {
                 Log.log("File path: " + filePath);
 
                 if (isJAREntry) {
-                    // FIXME: filePath separators may need to change
+                    // Note: filePath separators may need to change
                     // e.g. ("/" -> "\")
                     Log.log("Constructing a JAR file");
                     JarOutputStream jarTarget = (JarOutputStream) target;
@@ -98,6 +133,13 @@ public class NetworkUtilities {
         return false;
     }
 
+    /**
+     * Writing a file to the connection's outputStream.
+     * @param connection the connected socket
+     * @param f file to be written
+     * @param name the full qualified classname of the file.
+     * @return true if writing is successful. False otherwise.
+     */
     public static boolean writeFile(SSLSocket connection, File f, String name) {
         DataOutputStream outStream = getDataOutputStream(connection);
         boolean success = true;
@@ -128,8 +170,14 @@ public class NetworkUtilities {
         return false;
     }
 
-    // TODO: Add ACKs to other authors
-    
+    /**
+     * Converts bytes to hexString.
+     * This code is copied from StackOverflow.
+     * Note: the code on StackOverflow is licensed under CreativeCommons and is used here for
+     * educational purposes.
+     * @param bytes bytes to be converted.
+     * @return hexString representation of the bytes
+     */
     public static String bytesToHex(byte[] bytes) {
         char[] hexChars = new char[bytes.length * 2];
         int v;
@@ -141,6 +189,14 @@ public class NetworkUtilities {
         return new String(hexChars);
     }
 
+    /**
+     * Converts hexString to bytes.
+     * This code is copied from StackOverflow.
+     * Note: the code on StackOverflow is licensed under CreativeCommons and is used here for
+     * educational purposes.
+     * @param s hexString to be converted.
+     * @return the bytes representation
+     */
     public static byte[] hexStringToByteArray(String s) {
         int len = s.length();
         byte[] data = new byte[len / 2];

@@ -98,15 +98,16 @@ public class SecurityUtilities {
             return null;
         }
         
+        //Generate TrustStore
         Log.log("Loading trust store");
         KeyStore trustStore = genKeyStore(fis, password);
         if(trustStore == null) {
             return null;
         }
         
+        //Generate TrustManagerFactory
         Log.log("Generating default trust manager factory");
         try {
-            // generate trust manager
             tmf = TrustManagerFactory.getInstance(TrustManagerFactory
                     .getDefaultAlgorithm());
             tmf.init(trustStore);
@@ -120,15 +121,15 @@ public class SecurityUtilities {
             return null;
         }
         
-
+        //Generate SecureRandomNumberGenerator
         SecureRandom randomGen = genSecureRandomNumberGenerator();
         if(randomGen == null) {
             return null;
         }
         
+        //Generate SSLcontext
         Log.log("Generating a SSL context");
         try {
-            // generate sslcontext
             SSLContext ctx = SSLContext.getInstance("SSL");
             ctx.init(null, tmf.getTrustManagers(), randomGen);
 
@@ -163,14 +164,14 @@ public class SecurityUtilities {
             return null;
         }
         
-        // generate keystore
+        //Generate KeyStore
         Log.log("Loading KeyStore");
         KeyStore keyStore = genKeyStore(fis, password);
         if (keyStore == null) {
             return null;
         }
 
-        //Generate keyManagerFactory
+        //Generate KeyManagerFactory
         Log.log("Loading KeyManagerFactory");
         KeyManagerFactory kmf = null;
         try {
@@ -191,13 +192,14 @@ public class SecurityUtilities {
             return null;
         }
 
+        //Generate a SecureRandomNumberGenerator
         SecureRandom randomGen = genSecureRandomNumberGenerator();
         if(randomGen == null) {
             return null;
         }
-        
+
+        //Generate SSLContext
         Log.log("Generating SSLContext and ServerSocketFactory");
-        // generate sslcontext
         SSLContext ctx;
         try {
             ctx = SSLContext.getInstance("SSL");

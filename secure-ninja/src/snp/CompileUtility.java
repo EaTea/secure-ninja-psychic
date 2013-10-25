@@ -17,17 +17,40 @@ import javax.tools.SimpleJavaFileObject;
 import javax.tools.ToolProvider;
 import javax.tools.JavaCompiler.CompilationTask;
 
+/**
+ * Utility for in memory compilation.
+ * Code derived from http://www.java2s.com/Code/Java/JDK-6/CompilingfromMemory.htm
+ * @author Edwin Tay(20529864) && Wan Ying Goh(20784663)
+ * @version Oct 2013
+ */
 public class CompileUtility {
+    /**
+     * The regex pattern for where to put licenses.
+     */
     private static final String LICENSE_PATTERN = "\\s*[/*].*LICENSE.*[*/]\\s*";
     
+    /**
+     * The regex pattern for where to put password.
+     */
     private static final String PASSWORD_PATTERN = "\\s*[/*].*PASSWORD.*[*/]\\s*";
 
+    /**
+     * Compiling a softwareHouse file. The compilation will protect the resulting classfile
+     * if provided a license.
+     * @param f the file to be compiled.
+     * @param className the fully qualified classname
+     * @param license the license used to protect class file
+     * @return true if compilation is successful, false otherwise. False will be returned if license provided is null.
+     */
     public static boolean compileSWHFile(File f, String className, String license) {
+        if(license == null) {
+            return false;
+        }
         Scanner sc = null;
         try {
             sc = new Scanner(f);
         } catch (FileNotFoundException e) {
-            // TODO Auto-generated catch block
+            Log.error("Could not find file: %s", f.getAbsolutePath());
             e.printStackTrace();
             return false;
         }
@@ -37,6 +60,7 @@ public class CompileUtility {
             String s = sc.nextLine();
             writer.write(s+"\n");
             s.trim();
+            //
             if (s.matches(LICENSE_PATTERN)) {
                 writer.write("private static final String LICENSE_STRING = \"" + license + "\";\n");
                 sc.nextLine();
@@ -44,17 +68,31 @@ public class CompileUtility {
         }
         
         JavaFileObject file = new JavaSourceFromFile(className, writer.toString());
+        sc.close();
         return compileJavaFileObject(file);
     }
-    
+
+    /**
+     * Compiling a developer file. The compilation will protect the resulting classfile
+     * if provided a license.
+     * @param f the file to be compiled.
+     * @param className the fully qualified classname
+     * @param license the license used to protect class file
+     * @param licenses a map of library to licenses used to protect the class files
+     * @param password the password used to protect program
+     * @return true if compilation is successful, false otherwise. False will be returned if parameters provided are null.
+     */
     public static boolean compileDevFile(File f, String className, Map<String, String> licenses,
             String password) {
+        if(password == null || licenses == null) {
+            return false;
+        }
         Scanner sc = null;
         System.err.println(f.getAbsolutePath());
         try {
             sc = new Scanner(f);
         } catch (FileNotFoundException e) {
-            // TODO Auto-generated catch block
+            Log.error("Could not find file: %s", f.getAbsolutePath());
             e.printStackTrace();
             return false;
         }
@@ -67,6 +105,8 @@ public class CompileUtility {
             if (s.matches(LICENSE_PATTERN)) {
                 Set<String> libnames = licenses.keySet();
                 for(String name : libnames) {
+                    //if a developer is compiling code with null entries, that's their choice and we 
+                    //are not handling that
                     writer.write("LICENSE_MAP.put(\"" + name + "\", \"" + licenses.get(name) +"\");\n");
                 }
             } else if (s.matches(PASSWORD_PATTERN)) {
@@ -77,9 +117,15 @@ public class CompileUtility {
         }
         
         JavaFileObject file = new JavaSourceFromFile(className, writer.toString());
+        sc.close();
         return compileJavaFileObject(file);
     }
 
+    /**
+     * Private method to compile java code on the fly.
+     * @param file file to be compiled
+     * @return true if compilation is successful. False otherwise.
+     */
     private static boolean compileJavaFileObject(JavaFileObject file) {
         
         DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<JavaFileObject>();
@@ -104,21 +150,22 @@ public class CompileUtility {
         }
         return success;
     }
-}
 
-class JavaSourceFromFile extends SimpleJavaFileObject {
-    final String code;
-    final String name;
-
-    JavaSourceFromFile(String name, String code) {
-        super(URI.create("string:///" + name.replace('.', '/') + Kind.SOURCE.extension),
-                Kind.SOURCE);
-        this.name = name.replace('.', '/');
-        this.code = code;
-    }
-
-    @Override
-    public CharSequence getCharContent(boolean ignoreEncodingErrors) {
-        return code;
+    /**
+     * A representation of a java source file object.
+     */
+    private static class JavaSourceFromFile extends SimpleJavaFileObject {
+        private final String code;
+    
+        JavaSourceFromFile(String name, String code) {
+            super(URI.create("string:///" + name.replace('.', '/') + Kind.SOURCE.extension),
+                    Kind.SOURCE);
+            this.code = code;
+        }
+    
+        @Override
+        public CharSequence getCharContent(boolean ignoreEncodingErrors) {
+            return code;
+        }
     }
 }
