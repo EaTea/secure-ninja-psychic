@@ -115,8 +115,6 @@ class JavaSourceFromFile extends SimpleJavaFileObject {
                 Kind.SOURCE);
         this.name = name.replace('.', '/');
         this.code = code;
-        
-        System.err.println(this.code);
     }
 
     @Override
