@@ -68,6 +68,10 @@ public class Developer {
         }
     }
 
+    /**
+     * 
+     * @param sc
+     */
     private void processCommands(Scanner sc) {
         do {
             System.out.println("Commands:\n" + "\tRequest <Hostname> <Port> <LibraryName>"
