@@ -151,37 +151,16 @@ public class Developer {
                 outStream.writeUTF(libraryName);
                 outStream.writeInt(numLicense);
 
-                String algo = inStream.readUTF();
-                // getting SWH's public key
-                int keySize = inStream.readInt();
-                byte[] keyBytes = new byte[keySize];
-                for (int i = 0; i < keySize; i++) {
-                    keyBytes[i] = inStream.readByte();
-                }
-
                 // reading in the number of licenses we received from the SWH
                 int nLicReturned = inStream.readInt();
                 System.out.printf("%s returning %d licenses\n", connection.getInetAddress()
                         .getCanonicalHostName() + ":" + connection.getPort(), nLicReturned);
                 for (int i = 0; i < nLicReturned; i++) {
                     String license = inStream.readUTF();
-                    License temp = new License(license, connection.getInetAddress(),
-                            libraryName, connection.getPort(), keyBytes, algo);
-                    if(temp.getEncryptedLicenseString() != null) {
-                        addLicense(libraryName, temp);
-                        // inform SWH that we successfully added the license
-                        outStream.writeBoolean(true);
-                    } else {
-                        outStream.writeBoolean(false); // telling SWH we cant
-                                                       // encrypt their license
-                        System.err.println("Failed to encrypt license with SWH's public key, exiting");
-                        NetworkUtilities.closeSocketDataInputStream(inStream, connection);
-                        NetworkUtilities.closeSocketDataOutputStream(outStream, connection);
-
-                        System.out.println("<-----End Communication----->");
-                        System.out.println();
-                        return;
-                    }
+                    String unencrypted = inStream.readUTF();
+                    System.out.println("GOT UNENCRYTED" + unencrypted);
+                    addLicense(libraryName, new License(license, connection.getInetAddress(),
+                                libraryName, connection.getPort(), unencrypted));
                 }
 
                 if (nLicReturned <= 0) {

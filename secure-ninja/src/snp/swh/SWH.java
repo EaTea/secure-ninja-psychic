@@ -12,6 +12,7 @@ import java.security.KeyPairGenerator;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
@@ -144,12 +145,6 @@ public class SWH {
     
             if (numLicenses > 0 && libName != null && libraries.containsKey(libName)) {
                 try {
-                    System.out.println("Sending my public key to developer");
-                    byte[] keyBytes = myKey.getPublic().getEncoded();
-                    outStream.writeUTF(algo);
-                    outStream.writeInt(keyBytes.length);
-                    outStream.write(keyBytes);
-    
                     System.out.println("Generating licenses for "
                             + connection.getInetAddress().getCanonicalHostName() + ":"
                             + connection.getPort());
@@ -163,20 +158,11 @@ public class SWH {
                         // Better approach would be to use character encodings.
                         String license = NetworkUtilities.bytesToHex(md.digest(s.getBytes()));
                         outStream.writeUTF(license);
+                        String unencrypted = wrapLicense(license, myKey.getPublic());
+                        outStream.writeUTF(unencrypted);
                         //Developer told us that they cant encrypt our license with our public key
-                        if(!inStream.readBoolean()) {
-                            System.out.println("Developer unable to "
-                             + "encrypt our license with our key, exiting");
-                            NetworkUtilities.closeSocketDataInputStream(inStream, connection);
-                            NetworkUtilities.closeSocketDataOutputStream(outStream, connection);
-    
-                            System.out.println("<-----End Communication----->");
-                            System.out.println();
-                            return;
-                        }
                         addLicense(license, new License(license, InetAddress.getLocalHost(),
-                                libName, connection.getLocalPort(), null,null 
-                                /*SWH to encrypt the licenses*/));
+                                libName, connection.getLocalPort(), unencrypted));
                     }
                 } catch (IOException e) {
                     System.err.println("Error: encountered I/O error whilst "
@@ -322,6 +308,38 @@ public class SWH {
 
     private void decrementLicense(String license) {
         clientLicenses.remove(license);
+    }
+
+    private String wrapLicense(String license, PublicKey pubKey) {
+        if (pubKey == null) {
+            System.out.println("Null PublicKey received");
+            return null;
+        }
+        // Encrypt a license with a SWH public key using asymmetric key
+        // encryption
+        try {
+            Cipher cipher = Cipher.getInstance("RSA");
+            cipher.init(Cipher.ENCRYPT_MODE, pubKey);
+            byte[] encrypted = cipher.doFinal(NetworkUtilities.hexStringToByteArray(license));
+            String encryptedLicense = NetworkUtilities.bytesToHex(encrypted);
+            return encryptedLicense;
+        } catch (NoSuchAlgorithmException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (NoSuchPaddingException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (InvalidKeyException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (IllegalBlockSizeException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (BadPaddingException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        return null;
     }
 
     public static void main(String[] args) throws IOException {
