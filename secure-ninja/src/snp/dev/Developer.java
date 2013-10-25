@@ -158,7 +158,6 @@ public class Developer {
                 for (int i = 0; i < nLicReturned; i++) {
                     String license = inStream.readUTF();
                     String unencrypted = inStream.readUTF();
-                    System.out.println("GOT UNENCRYTED" + unencrypted);
                     addLicense(libraryName, new License(license, connection.getInetAddress(),
                                 libraryName, connection.getPort(), unencrypted));
                 }
