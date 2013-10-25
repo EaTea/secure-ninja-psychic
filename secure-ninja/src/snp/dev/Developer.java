@@ -316,7 +316,7 @@ public class Developer {
                 e.printStackTrace();
                 count = -1;
             }
-
+            
             try {
                 Log.log("Sending number of licenses");
                 // write -1 for an error occurring previously
@@ -327,7 +327,7 @@ public class Developer {
                 count = -1;
             }
 
-            if (count != 0) {
+            if (count != -1) {
                 for (License lic : requestedLicenses) {
                     try {
                         Log.log("Writing license to network");
