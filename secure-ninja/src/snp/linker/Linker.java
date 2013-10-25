@@ -90,6 +90,10 @@ public class Linker {
                     e.printStackTrace();
                 }
             }
+            File tempJar = new File("temp.jar");
+            if (tempJar.exists()) {
+                tempJar.delete();
+            }
         }
     }
 
@@ -314,10 +318,6 @@ public class Linker {
         }
         if (link != null) {
             link.processRequests();
-            File tempJar = new File("temp.jar");
-            if (tempJar.exists()) {
-                tempJar.delete();
-            }
         }
         sc.close();
     }
