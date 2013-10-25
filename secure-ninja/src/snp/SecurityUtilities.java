@@ -121,7 +121,6 @@ public class SecurityUtilities {
         }
         
 
-        System.out.println("Generating a SHA1PRNG secure random number generator");
         SecureRandom randomGen = genSecureRandomNumberGenerator();
         if(randomGen == null) {
             return null;
@@ -194,7 +193,6 @@ public class SecurityUtilities {
             return null;
         }
 
-        System.out.println("Generating a SHA1PRNG secure random number generator");
         SecureRandom randomGen = genSecureRandomNumberGenerator();
         if(randomGen == null) {
             return null;
