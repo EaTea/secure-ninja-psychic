@@ -27,14 +27,35 @@ import snp.Log;
 import snp.NetworkUtilities;
 import snp.SecurityUtilities;
 
+/**
+ * 
+ * @author Edwin Tay(20529864) && Wan Ying Goh(20784663)
+ * @version Oct 2013
+ */
 public class Developer {
 
+    /**
+     * 
+     */
     private SSLSocketFactory sslfact;
 
+    /**
+     * 
+     */
     private Map<String, Queue<License>> licenseMap;
 
+    /**
+     * 
+     */
     private String classpath;
 
+    /**
+     * 
+     * @param classpath
+     * @param trustFile
+     * @param password
+     * @throws UnknownHostException
+     */
     public Developer(String classpath, String trustFile, String password)
             throws UnknownHostException {
         System.out.println("Developer created at "

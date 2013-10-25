@@ -2,10 +2,9 @@ package snp;
 
 import java.net.InetAddress;
 
-
 /**
- * 
- * @author Edwin Tay(20529864) && Wan Ying Goh(210784663)
+ * Our implementation of license.
+ * @author Edwin Tay(20529864) && Wan Ying Goh(20784663)
  * @version Oct 2013
  */
 public class License {
