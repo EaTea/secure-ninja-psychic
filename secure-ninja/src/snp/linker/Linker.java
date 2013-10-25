@@ -23,9 +23,10 @@ import snp.NetworkUtilities;
 import snp.SecurityUtilities;
 
 /**
- * 
+ * Our linkBroker implementation.
+ * It packages java .class files into JAR when requested by developer.
  * @author Edwin Tay(20529864) & Wan Ying Goh(20784663)
- *
+ * @version Oct 2013
  */
 public class Linker {
 

@@ -29,14 +29,35 @@ import snp.Log;
 import snp.NetworkUtilities;
 import snp.SecurityUtilities;
 
+/**
+ * 
+ * @author Edwin Tay(20529864) && Wan Ying Goh(20784663)
+ * @version Oct 2013
+ */
 public class Developer {
 
+    /**
+     * 
+     */
     private SSLSocketFactory sslfact;
 
+    /**
+     * 
+     */
     private Map<String, Queue<License>> licenseMap;
 
+    /**
+     * 
+     */
     private String classpath;
 
+    /**
+     * 
+     * @param classpath
+     * @param trustFile
+     * @param password
+     * @throws UnknownHostException
+     */
     public Developer(String classpath, String trustFile, String password)
             throws UnknownHostException {
         licenseMap = new HashMap<String, Queue<License>>();
@@ -52,6 +73,10 @@ public class Developer {
         Log.log("Developer created at " + InetAddress.getLocalHost().getCanonicalHostName());
     }
 
+    /**
+     * 
+     * @param sc
+     */
     private void processCommands(Scanner sc) {
         do {
             System.out.println("Commands:\n" + "\tRequest <Hostname> <Port> <LibraryName>"
@@ -60,14 +85,15 @@ public class Developer {
             try {
                 String command = sc.next();
                 if (command.equalsIgnoreCase("Request")) {
-    
+
                     String remoteHost = sc.next();
                     int remotePort = sc.nextInt();
                     String libName = sc.next();
                     int numLicenses = sc.nextInt();
-    
+
                     try {
-                        SSLSocket connection = (SSLSocket) sslfact.createSocket(remoteHost, remotePort);
+                        SSLSocket connection = (SSLSocket) sslfact.createSocket(remoteHost,
+                                remotePort);
                         requestLicense(numLicenses, libName, connection);
                         connection.close();
                     } catch (UnknownHostException e) {
@@ -78,11 +104,11 @@ public class Developer {
                         e.printStackTrace();
                     }
                 } else if (command.equalsIgnoreCase("Link")) {
-    
+
                     String remoteHost = sc.next();
                     int remotePort = sc.nextInt();
                     String jarFileName = sc.next();
-    
+
                     System.out.println("How many required libraries?");
                     int nLibs = sc.nextInt();
                     System.out.printf("Please input %d libraries\n", nLibs);
@@ -90,50 +116,55 @@ public class Developer {
                     for (int i = 0; i < nLibs; i++) {
                         libNames.add(sc.next());
                     }
-    
+
                     List<License> requestedLicenses = getLicenses(libNames);
                     if (requestedLicenses == null) {
                         System.out.println("Sorry, you are missing a license for one or more "
                                 + "requested libraries and cannot link");
                         continue;
                     }
-    
+
                     // why would you try and link without any of your own files?
                     System.out.println("How many files to link?");
                     int nFiles = sc.nextInt();
                     if (nFiles == 0) {
-                        System.out.println("Sorry, you need at least 1 file to provide for linking");
+                        System.out
+                                .println("Sorry, you need at least 1 file to provide for linking");
                         continue;
                     }
                     System.out.printf("Please input %d fully qualified class names(s)\n", nFiles);
                     System.out.println("Note: 1st file treated as main");
                     Map<String, File> srcFiles = new HashMap<String, File>();
-    
+
                     String mainName = "";
-    
+
                     for (int i = 0; i < nFiles; i++) {
                         String name = sc.next();
                         String path = name.replace('.', '/') + ".java";
                         File f = new File(this.classpath + "/" + path);
                         if (!f.exists()) {
-                            System.out.println("Sorry, the file you just asked for doesn't exist. Try again.");
+                            System.out
+                                    .println("Sorry, the file you just asked for doesn't exist. Try again.");
                             i--;
                             continue;
                         }
                         srcFiles.put(name, f);
-    
+
                         if (i == 0) {
                             mainName = name;
                         }
                     }
-    
+
                     try {
-                        SSLSocket connection = (SSLSocket) sslfact.createSocket(remoteHost, remotePort);
-                        if (linkFiles(mainName, srcFiles, requestedLicenses, jarFileName, connection)) {
+                        SSLSocket connection = (SSLSocket) sslfact.createSocket(remoteHost,
+                                remotePort);
+                        if (linkFiles(mainName, srcFiles, requestedLicenses, jarFileName,
+                                connection)) {
                             System.out.println("Successfully packaged your JAR");
                         } else {
-                            System.out.println("Couldn't link up your JAR: please check the error log for" +
-                            		" more details");
+                            System.out
+                                    .println("Couldn't link up your JAR: please check the error log for"
+                                            + " more details");
                         }
                         connection.close();
                     } catch (UnknownHostException e) {
@@ -149,13 +180,19 @@ public class Developer {
                 } else {
                     System.out.println("Sorry, that was not a recognised command.");
                 }
-            } catch(InputMismatchException e) {
+            } catch (InputMismatchException e) {
                 System.out.println("You've typed something that we couldn't recognise.");
                 System.out.println("Please try again...");
             }
         } while (true);
     }
 
+    /**
+     * 
+     * @param numLicense
+     * @param libraryName
+     * @param connection
+     */
     private void requestLicense(int numLicense, String libraryName, SSLSocket connection) {
         DataInputStream inStream = NetworkUtilities.getDataInputStream(connection);
         DataOutputStream outStream = NetworkUtilities.getDataOutputStream(connection);
@@ -197,6 +234,11 @@ public class Developer {
         }
     }
 
+    /**
+     * 
+     * @param library
+     * @param l
+     */
     private void addLicense(String library, License l) {
         if (!licenseMap.containsKey(library)) {
             licenseMap.put(library, new LinkedList<License>());
@@ -204,6 +246,15 @@ public class Developer {
         licenseMap.get(library).add(l);
     }
 
+    /**
+     * 
+     * @param mainFile
+     * @param srcFiles
+     * @param requestedLicenses
+     * @param jarName
+     * @param connection
+     * @return
+     */
     private boolean linkFiles(String mainFile, Map<String, File> srcFiles,
             List<License> requestedLicenses, final String jarName, SSLSocket connection) {
 
@@ -251,7 +302,7 @@ public class Developer {
                         outStream.writeUTF(lic.getSoftwareHouseIP().getCanonicalHostName());
                         outStream.writeInt(lic.getPort());
                         outStream.writeUTF(lic.getEncryptedLicenseString());
-                        
+
                         int success = inStream.readInt();
 
                         if (success == 0) {
@@ -260,14 +311,14 @@ public class Developer {
                             licenseMap.put(lic.getLibraryName(), lic.getLicenseString());
                             md.update(lic.getLicenseString().getBytes());
                             Log.log("License used successfully, removing license");
-                        } else if (success == -1){
+                        } else if (success == -1) {
                             decrementLicense(lic.getLibraryName(), lic);
                             Log.log("Could not verify all the licenses --- inconsistency between our license"
                                     + " list and SWH license list");
                             break;
                         } else if (success == -2) {
-                            Log.log("Something went wrong on the SWH's end --- exiting since cannot" +
-                            		" provide our linked file");
+                            Log.log("Something went wrong on the SWH's end --- exiting since cannot"
+                                    + " provide our linked file");
                             break;
                         } else {
                             Log.log("Linker sent back unrecognised return code --- exiting");
@@ -331,8 +382,10 @@ public class Developer {
                                 if (NetworkUtilities.writeFile(connection, f, name)) {
                                     count++;
                                     f.delete();
-                                    // the files were generated from the in-memory compilation
-                                    // they are temporary class files that are no longer needed
+                                    // the files were generated from the
+                                    // in-memory compilation
+                                    // they are temporary class files that are
+                                    // no longer needed
                                     // and should be cleaned up
                                 } else {
                                     Log.error("Error occurred sending " + f.getAbsolutePath());
