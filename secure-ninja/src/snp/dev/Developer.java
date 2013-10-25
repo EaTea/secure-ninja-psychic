@@ -7,13 +7,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.security.InvalidKeyException;
-import java.security.KeyFactory;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.security.PublicKey;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -23,10 +18,6 @@ import java.util.Queue;
 import java.util.Scanner;
 import java.util.Set;
 
-import javax.crypto.BadPaddingException;
-import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.SSLSocket;
 
@@ -167,21 +158,6 @@ public class Developer {
                 for (int i = 0; i < keySize; i++) {
                     keyBytes[i] = inStream.readByte();
                 }
-                PublicKey pubKey = genPublicKey(keyBytes, algo);
-                if (pubKey == null) {
-                    System.out.println("Unable to reconstruct SWH's public key");
-                    outStream.writeBoolean(false); // tell SWH we can't get
-                                                   // their key
-
-                    NetworkUtilities.closeSocketDataInputStream(inStream, connection);
-                    NetworkUtilities.closeSocketDataOutputStream(outStream, connection);
-
-                    System.out.println("<-----End Communication----->");
-                    System.out.println();
-                    return;
-                }
-                // Telling SWH that we got their key
-                outStream.writeBoolean(true);
 
                 // reading in the number of licenses we received from the SWH
                 int nLicReturned = inStream.readInt();
@@ -189,17 +165,16 @@ public class Developer {
                         .getCanonicalHostName() + ":" + connection.getPort(), nLicReturned);
                 for (int i = 0; i < nLicReturned; i++) {
                     String license = inStream.readUTF();
-                    String encrypted = wrapLicense(license, pubKey);
-                    if (encrypted != null) {
-                        addLicense(libraryName, new License(license, connection.getInetAddress(),
-                                libraryName, connection.getPort(), encrypted));
+                    License temp = new License(license, connection.getInetAddress(),
+                            libraryName, connection.getPort(), keyBytes, algo);
+                    if(temp.getEncryptedLicenseString() != null) {
+                        addLicense(libraryName, temp);
                         // inform SWH that we successfully added the license
                         outStream.writeBoolean(true);
                     } else {
                         outStream.writeBoolean(false); // telling SWH we cant
                                                        // encrypt their license
-                        System.err
-                                .println("Failed to encrypt license with SWH's public key, exiting");
+                        System.err.println("Failed to encrypt license with SWH's public key, exiting");
                         NetworkUtilities.closeSocketDataInputStream(inStream, connection);
                         NetworkUtilities.closeSocketDataOutputStream(outStream, connection);
 
@@ -225,54 +200,6 @@ public class Developer {
                 e.printStackTrace();
             }
         }
-    }
-
-    private PublicKey genPublicKey(byte[] keyBytes, String algo) {
-        X509EncodedKeySpec keySpec = new X509EncodedKeySpec(keyBytes);
-        try {
-            KeyFactory keyFact = KeyFactory.getInstance(algo);
-            PublicKey pubKey = keyFact.generatePublic(keySpec);
-            return pubKey;
-        } catch (NoSuchAlgorithmException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (InvalidKeySpecException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    private String wrapLicense(String license, PublicKey pubKey) {
-        if (pubKey == null) {
-            System.out.println("Null PublicKey received");
-            return null;
-        }
-        // Encrypt a license with a SWH public key using asymmetric key
-        // encryption
-        try {
-            Cipher cipher = Cipher.getInstance("RSA");
-            cipher.init(Cipher.ENCRYPT_MODE, pubKey);
-            byte[] encrypted = cipher.doFinal(NetworkUtilities.hexStringToByteArray(license));
-            String encryptedLicense = NetworkUtilities.bytesToHex(encrypted);
-            return encryptedLicense;
-        } catch (NoSuchAlgorithmException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (NoSuchPaddingException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (InvalidKeyException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (IllegalBlockSizeException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (BadPaddingException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-        return null;
     }
 
     private void addLicense(String library, License l) {

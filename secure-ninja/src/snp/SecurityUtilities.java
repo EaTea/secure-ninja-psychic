@@ -20,7 +20,7 @@ import javax.net.ssl.TrustManagerFactory;
 /**
  * 
  * @author Edwin Tay(20529864) && Wan Ying Goh(210784663)
- *
+ * @version Oct 2013
  */
 public class SecurityUtilities {
     /**

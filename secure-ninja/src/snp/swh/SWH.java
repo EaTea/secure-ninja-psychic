@@ -149,16 +149,6 @@ public class SWH {
                     outStream.writeUTF(algo);
                     outStream.writeInt(keyBytes.length);
                     outStream.write(keyBytes);
-                    System.out.println((NetworkUtilities.bytesToHex(keyBytes)));
-                    if(!inStream.readBoolean()) {
-                        System.out.println("Receiving my public key by developer failed");
-                        NetworkUtilities.closeSocketDataInputStream(inStream, connection);
-                        NetworkUtilities.closeSocketDataOutputStream(outStream, connection);
-    
-                        System.out.println("<-----End Communication----->");
-                        System.out.println();
-                        return;
-                    }
     
                     System.out.println("Generating licenses for "
                             + connection.getInetAddress().getCanonicalHostName() + ":"
@@ -185,8 +175,8 @@ public class SWH {
                             return;
                         }
                         addLicense(license, new License(license, InetAddress.getLocalHost(),
-                                libName, connection.getLocalPort(), null
-                                /*SWH doesnt need to store encrypted license*/));
+                                libName, connection.getLocalPort(), null,null 
+                                /*SWH to encrypt the licenses*/));
                     }
                 } catch (IOException e) {
                     System.err.println("Error: encountered I/O error whilst "
